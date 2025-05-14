@@ -14,8 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "coding-agent.helloWorld",
-        "title": "Hello World"
+        "command": "code-tutor.annotate",
+        "title": "Toggle Tutor Annotations"
       }
     ]
   },
