@@ -1,9 +1,9 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import { ChatVSCodeLanguageModelAPI } from "./ChatVSCodeLanguageModelAPI";
+import { ChatVSCodeLanguageModelAPI } from "./core/ChatVSCodeLanguageModelAPI";
 import { HumanMessage } from "@langchain/core/messages";
-import { ChatViewProvider } from "./ChatViewProvider";
+import { ChatViewProvider } from "./core/ChatViewProvider";
 
 const ANNOTATION_PROMPT = `You are a code tutor who helps students learn how to write better code. Your job is to evaluate a block of code that the user gives you and then annotate any lines that could be improved with a brief suggestion and the reason why you are making that suggestion. Only make suggestions when you feel the severity is enough that it will impact the readability and maintainability of the code. Be friendly with your suggestions and remember that these are students so they need gentle guidance. Format each suggestion as a single JSON object. It is not necessary to wrap your response in triple backticks. Here is an example of what your response should look like:
 
