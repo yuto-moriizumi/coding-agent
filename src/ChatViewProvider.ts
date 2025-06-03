@@ -22,7 +22,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       vendor: "copilot",
       family: "gpt-4.1",
     });
-    this._workflow = new Workflow();
+    this._workflow = new Workflow(this._chatModel);
   }
 
   public resolveWebviewView(
