@@ -1,6 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
+import { ChatVSCodeLanguageModelAPI } from "./ChatVSCodeLanguageModelAPI";
+import { HumanMessage } from "@langchain/core/messages";
 
 const ANNOTATION_PROMPT = `You are a code tutor who helps students learn how to write better code. Your job is to evaluate a block of code that the user gives you and then annotate any lines that could be improved with a brief suggestion and the reason why you are making that suggestion. Only make suggestions when you feel the severity is enough that it will impact the readability and maintainability of the code. Be friendly with your suggestions and remember that these are students so they need gentle guidance. Format each suggestion as a single JSON object. It is not necessary to wrap your response in triple backticks. Here is an example of what your response should look like:
 
@@ -20,29 +22,25 @@ export function activate(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerTextEditorCommand(
     "code-tutor.annotate",
     async (textEditor: vscode.TextEditor) => {
-      const codeWithLineNumbers = getVisibleCodeWithLineNumbers(textEditor); // select the 4o chat model
-      let [model] = await vscode.lm.selectChatModels({
+      const codeWithLineNumbers = getVisibleCodeWithLineNumbers(textEditor);
+      
+      // Using ChatVSCodeLanguageModelAPI with langchain
+      const chatModel = new ChatVSCodeLanguageModelAPI({
         vendor: "copilot",
         family: "gpt-4o",
       });
 
-      // init the chat message
-      const messages = [
-        vscode.LanguageModelChatMessage.User(ANNOTATION_PROMPT),
-        vscode.LanguageModelChatMessage.User(codeWithLineNumbers),
-      ];
+      try {
+        const messages = [
+          new HumanMessage(ANNOTATION_PROMPT),
+          new HumanMessage(codeWithLineNumbers),
+        ];
 
-      // make sure the model is available
-      if (model) {
-        // send the messages array to the model and get the response
-        let chatResponse = await model.sendRequest(
-          messages,
-          {},
-          new vscode.CancellationTokenSource().token
-        );
-
-        // handle chat response
-        await parseChatResponse(chatResponse, textEditor);
+        const result = await chatModel.invoke(messages);
+        await parseLangChainResponse(result.content as string, textEditor);
+      } catch (error) {
+        console.error("Error using ChatVSCodeLanguageModelAPI:", error);
+        vscode.window.showErrorMessage(`Failed to get code annotations: ${error}`);
       }
     }
   );
@@ -74,28 +72,26 @@ function applyDecoration(
   vscode.window.activeTextEditor?.setDecorations(decorationType, [decoration]);
 }
 
-async function parseChatResponse(
-  chatResponse: vscode.LanguageModelChatResponse,
+async function parseLangChainResponse(
+  response: string,
   textEditor: vscode.TextEditor
 ) {
-  let accumulatedResponse = "";
-
-  for await (const fragment of chatResponse.text) {
-    accumulatedResponse += fragment;
-
-    // if the fragment is a }, we can try to parse the whole line
-    if (fragment.includes("}")) {
+  const lines = response.split('\n');
+  
+  for (const line of lines) {
+    if (line.trim() && line.includes('{') && line.includes('}')) {
       try {
-        const annotation = JSON.parse(accumulatedResponse);
-        applyDecoration(textEditor, annotation.line, annotation.suggestion);
-        // reset the accumulator for the next line
-        accumulatedResponse = "";
+        const annotation = JSON.parse(line.trim());
+        if (annotation.line && annotation.suggestion) {
+          applyDecoration(textEditor, annotation.line, annotation.suggestion);
+        }
       } catch (e) {
-        // do nothing
+        // Continue processing other lines if one fails to parse
       }
     }
   }
 }
+
 
 function getVisibleCodeWithLineNumbers(textEditor: vscode.TextEditor) {
   // get the position of the first and last visible lines
