@@ -9,13 +9,10 @@ import {
   AIMessage,
   SystemMessage,
 } from "@langchain/core/messages";
-import {
-  ChatGeneration,
-  ChatResult,
-} from "@langchain/core/outputs";
+import { ChatGeneration, ChatResult } from "@langchain/core/outputs";
 import { CallbackManagerForLLMRun } from "@langchain/core/callbacks/manager";
 
-export interface ChatVSCodeLanguageModelAPIParams extends BaseChatModelParams {
+interface ChatVSCodeLanguageModelAPIParams extends BaseChatModelParams {
   vendor?: string;
   family?: string;
   model?: string;
@@ -29,7 +26,7 @@ export class ChatVSCodeLanguageModelAPI extends BaseChatModel {
   constructor(params: ChatVSCodeLanguageModelAPIParams = {}) {
     super(params);
     this.vendor = params.vendor || "copilot";
-    this.family = params.family || "gpt-4o";
+    this.family = params.family || "gpt-4.1";
     this.model = params.model;
   }
 
@@ -40,10 +37,16 @@ export class ChatVSCodeLanguageModelAPI extends BaseChatModel {
   async _generate(
     messages: BaseMessage[],
     options?: this["ParsedCallOptions"],
-    runManager?: CallbackManagerForLLMRun
+    _runManager?: CallbackManagerForLLMRun
   ): Promise<ChatResult> {
     const vscodeMessages = this.convertMessagesToVSCode(messages);
-    
+    console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+    // おそらくCopilotの初期化を待たないと空の結果が返る
+    const models = await vscode.lm.selectChatModels();
+    console.log({ models });
+    await vscode.window.showInformationMessage(
+      `Available models: ${JSON.stringify(models)}`
+    );
     const [model] = await vscode.lm.selectChatModels({
       vendor: this.vendor,
       family: this.family,
@@ -51,7 +54,9 @@ export class ChatVSCodeLanguageModelAPI extends BaseChatModel {
     });
 
     if (!model) {
-      throw new Error(`No VS Code Language Model found for vendor: ${this.vendor}, family: ${this.family}`);
+      throw new Error(
+        `No VS Code Language Model found for vendor: ${this.vendor}, family: ${this.family}`
+      );
     }
 
     const cancellationToken = options?.signal
@@ -83,12 +88,16 @@ export class ChatVSCodeLanguageModelAPI extends BaseChatModel {
     }
   }
 
-  private convertMessagesToVSCode(messages: BaseMessage[]): vscode.LanguageModelChatMessage[] {
+  private convertMessagesToVSCode(
+    messages: BaseMessage[]
+  ): vscode.LanguageModelChatMessage[] {
     return messages.map((message) => {
       if (message instanceof HumanMessage) {
         return vscode.LanguageModelChatMessage.User(message.content as string);
       } else if (message instanceof AIMessage) {
-        return vscode.LanguageModelChatMessage.Assistant(message.content as string);
+        return vscode.LanguageModelChatMessage.Assistant(
+          message.content as string
+        );
       } else if (message instanceof SystemMessage) {
         return vscode.LanguageModelChatMessage.User(message.content as string);
       } else {
@@ -97,15 +106,17 @@ export class ChatVSCodeLanguageModelAPI extends BaseChatModel {
     });
   }
 
-  private createCancellationToken(signal: AbortSignal): vscode.CancellationToken {
+  private createCancellationToken(
+    signal: AbortSignal
+  ): vscode.CancellationToken {
     const source = new vscode.CancellationTokenSource();
-    
+
     if (signal.aborted) {
       source.cancel();
     } else {
-      signal.addEventListener('abort', () => source.cancel());
+      signal.addEventListener("abort", () => source.cancel());
     }
-    
+
     return source.token;
   }
 }

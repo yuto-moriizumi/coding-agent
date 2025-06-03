@@ -3,6 +3,7 @@
 import * as vscode from "vscode";
 import { ChatVSCodeLanguageModelAPI } from "./ChatVSCodeLanguageModelAPI";
 import { HumanMessage } from "@langchain/core/messages";
+import { ChatViewProvider } from "./ChatViewProvider";
 
 const ANNOTATION_PROMPT = `You are a code tutor who helps students learn how to write better code. Your job is to evaluate a block of code that the user gives you and then annotate any lines that could be improved with a brief suggestion and the reason why you are making that suggestion. Only make suggestions when you feel the severity is enough that it will impact the readability and maintainability of the code. Be friendly with your suggestions and remember that these are students so they need gentle guidance. Format each suggestion as a single JSON object. It is not necessary to wrap your response in triple backticks. Here is an example of what your response should look like:
 
@@ -12,22 +13,33 @@ const ANNOTATION_PROMPT = `You are a code tutor who helps students learn how to 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  // Use the console to output diagnostic information (console.log) and errors (console.error)
-  // This line of code will only be executed once when your extension is activated
   console.log('Congratulations, your extension "coding-agent" is now active!');
 
-  // The command has been defined in the package.json file
-  // Now provide the implementation of the command with registerCommand
-  // The commandId parameter must match the command field in package.json
-  const disposable = vscode.commands.registerTextEditorCommand(
+  // Register CodingAgent Chat Provider
+  const codingAgentChatProvider = new ChatViewProvider(context.extensionUri);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      ChatViewProvider.viewType,
+      codingAgentChatProvider
+    )
+  );
+
+  // Register commands
+  const openChatCommand = vscode.commands.registerCommand(
+    "codingAgent.openChat",
+    () => {
+      vscode.commands.executeCommand("workbench.view.extension.codingAgent");
+    }
+  );
+
+  const annotateCommand = vscode.commands.registerTextEditorCommand(
     "code-tutor.annotate",
     async (textEditor: vscode.TextEditor) => {
       const codeWithLineNumbers = getVisibleCodeWithLineNumbers(textEditor);
-      
-      // Using ChatVSCodeLanguageModelAPI with langchain
+
       const chatModel = new ChatVSCodeLanguageModelAPI({
         vendor: "copilot",
-        family: "gpt-4o",
+        family: "gpt-4.1",
       });
 
       try {
@@ -40,12 +52,14 @@ export function activate(context: vscode.ExtensionContext) {
         await parseLangChainResponse(result.content as string, textEditor);
       } catch (error) {
         console.error("Error using ChatVSCodeLanguageModelAPI:", error);
-        vscode.window.showErrorMessage(`Failed to get code annotations: ${error}`);
+        vscode.window.showErrorMessage(
+          `Failed to get code annotations: ${error}`
+        );
       }
     }
   );
 
-  context.subscriptions.push(disposable);
+  context.subscriptions.push(openChatCommand, annotateCommand);
 }
 
 function applyDecoration(
@@ -76,10 +90,10 @@ async function parseLangChainResponse(
   response: string,
   textEditor: vscode.TextEditor
 ) {
-  const lines = response.split('\n');
-  
+  const lines = response.split("\n");
+
   for (const line of lines) {
-    if (line.trim() && line.includes('{') && line.includes('}')) {
+    if (line.trim() && line.includes("{") && line.includes("}")) {
       try {
         const annotation = JSON.parse(line.trim());
         if (annotation.line && annotation.suggestion) {
@@ -91,7 +105,6 @@ async function parseLangChainResponse(
     }
   }
 }
-
 
 function getVisibleCodeWithLineNumbers(textEditor: vscode.TextEditor) {
   // get the position of the first and last visible lines

@@ -16,8 +16,40 @@
       {
         "command": "code-tutor.annotate",
         "title": "Toggle Tutor Annotations"
+      },
+      {
+        "command": "codingAgent.openChat",
+        "title": "Open CodingAgent Chat",
+        "icon": "$(comment-discussion)"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codingAgent",
+          "title": "CodingAgent",
+          "icon": "$(robot)"
+        }
+      ]
+    },
+    "views": {
+      "codingAgent": [
+        {
+          "id": "codingAgentChat",
+          "name": "Chat",
+          "type": "webview"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "codingAgent.openChat",
+          "when": "view == codingAgentChat",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -48,6 +80,7 @@
   },
   "dependencies": {
     "@langchain/core": "^0.3.57",
+    "@langchain/langgraph": "^0.3.0",
     "langchain": "^0.3.27"
   }
 }
