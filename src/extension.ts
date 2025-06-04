@@ -15,8 +15,16 @@ const ANNOTATION_PROMPT = `You are a code tutor who helps students learn how to 
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "coding-agent" is now active!');
 
+  const chatModel = new ChatVSCodeLanguageModelAPI({
+    vendor: "copilot",
+    family: "gpt-4.1",
+  });
+
   // Register CodingAgent Chat Provider
-  const codingAgentChatProvider = new ChatViewProvider(context.extensionUri);
+  const codingAgentChatProvider = new ChatViewProvider(
+    context.extensionUri,
+    chatModel
+  );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       ChatViewProvider.viewType,
@@ -36,11 +44,6 @@ export function activate(context: vscode.ExtensionContext) {
     "code-tutor.annotate",
     async (textEditor: vscode.TextEditor) => {
       const codeWithLineNumbers = getVisibleCodeWithLineNumbers(textEditor);
-
-      const chatModel = new ChatVSCodeLanguageModelAPI({
-        vendor: "copilot",
-        family: "gpt-4.1",
-      });
 
       try {
         const messages = [
