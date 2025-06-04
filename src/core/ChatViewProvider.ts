@@ -78,48 +78,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     this._updateWebview();
 
     try {
-      // Use langgraph workflow for complex requests
-      if (this._isComplexRequest(message)) {
-        const result = await this._workflow.execute(message);
+      const result = await this._workflow.execute(message);
 
-        // Replace working message with final result
-        this._chatHistory.pop(); // Remove working message
+      // Replace working message with final result
+      this._chatHistory.pop(); // Remove working message
 
-        const assistantMessage: ChatMessage = {
-          id: (Date.now() + 2).toString(),
-          role: "assistant",
-          content:
-            (result.messages[result.messages.length - 1]?.content as string) ||
-            "Task completed!",
-          timestamp: Date.now(),
-        };
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 2).toString(),
+        role: "assistant",
+        content:
+          (result.messages[result.messages.length - 1]?.content as string) ||
+          "Task completed!",
+        timestamp: Date.now(),
+      };
 
-        this._chatHistory.push(assistantMessage);
-      } else {
-        // Simple chat for basic questions
-        const messages = this._chatHistory
-          .filter((msg) => msg.id !== workingMessage.id)
-          .map((msg) =>
-            msg.role === "user"
-              ? new HumanMessage(msg.content)
-              : new AIMessage(msg.content)
-          );
-
-        const result = await this._chatModel.invoke(messages);
-
-        // Replace working message with response
-        this._chatHistory.pop(); // Remove working message
-
-        const assistantMessage: ChatMessage = {
-          id: (Date.now() + 2).toString(),
-          role: "assistant",
-          content: result.content as string,
-          timestamp: Date.now(),
-        };
-
-        this._chatHistory.push(assistantMessage);
-      }
-
+      this._chatHistory.push(assistantMessage);
       this._updateWebview();
     } catch (error) {
       console.error("Chat error:", error);
@@ -139,32 +112,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
       vscode.window.showErrorMessage(`Chat error: ${error}`);
     }
-  }
-
-  private _isComplexRequest(message: string): boolean {
-    const complexKeywords = [
-      "create",
-      "build",
-      "implement",
-      "add",
-      "write",
-      "generate",
-      "modify",
-      "update",
-      "fix",
-      "refactor",
-      "install",
-      "setup",
-      "file",
-      "component",
-      "function",
-      "class",
-      "test",
-      "debug",
-    ];
-
-    const lowerMessage = message.toLowerCase();
-    return complexKeywords.some((keyword) => lowerMessage.includes(keyword));
   }
 
   private _clearChat() {
