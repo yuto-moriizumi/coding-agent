@@ -65,6 +65,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     this._chatHistory.push(userMessage);
     this._updateWebview();
 
+    // Get active and open tabs
+    const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
+    const activeFilePath = activeTab?.input instanceof vscode.TabInputText ? activeTab.input.uri.fsPath : undefined;
+
+    const openFilePaths: string[] = [];
+    for (const tabGroup of vscode.window.tabGroups.all) {
+      for (const tab of tabGroup.tabs) {
+        if (tab.input instanceof vscode.TabInputText) {
+          openFilePaths.push(tab.input.uri.fsPath);
+        }
+      }
+    }
+
     // Show working indicator
     const workingMessage: ChatMessage = {
       id: (Date.now() + 1).toString(),
@@ -78,7 +91,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     try {
       console.log("BEFORE WORKFLOW EXECUTION");
-      const result = await this._workflow.execute(message);
+      const result = await this._workflow.execute(message, activeFilePath, openFilePaths);
       console.log("AFTER WORKFLOW EXECUTION");
 
       // Replace working message with final result
