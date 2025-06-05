@@ -1,6 +1,7 @@
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { MemorySaver } from "@langchain/langgraph-checkpoint";
 import { BaseMessage, HumanMessage } from "@langchain/core/messages";
-import { VSCodeReactTools } from "./VSCodeReactTools";
+import { VSCodeTools } from "./VSCodeTools";
 import { LanguageModelLike } from "@langchain/core/language_models/base";
 
 export interface CodingAgentState {
@@ -11,21 +12,29 @@ export class Workflow {
   private agent;
 
   constructor(llm: LanguageModelLike) {
-    const tools = VSCodeReactTools.createTools();
+    const tools = VSCodeTools.createTools();
+    const memory = new MemorySaver();
 
     this.agent = createReactAgent({
       llm,
       tools,
+      checkpointer: memory,
     });
   }
 
   async execute(userRequest: string): Promise<CodingAgentState> {
+    // For simplicity, using a fixed thread_id.
+    // In a real application, you'd manage this dynamically.
+    const threadId = "coding-agent-thread";
+    const config = { configurable: { thread_id: threadId } };
+
     try {
       const initialState = {
         messages: [new HumanMessage(userRequest)],
       };
 
-      const result = await this.agent.invoke(initialState);
+      // Pass the config to invoke
+      const result = await this.agent.invoke(initialState, config);
 
       return {
         messages: result.messages || [],
