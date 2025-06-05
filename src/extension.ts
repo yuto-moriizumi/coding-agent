@@ -39,7 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
   // });
   // ChatOpenAI を使用した仮実装
   const chatModel = new ChatOpenAI({
-    modelName: "gpt-4o",
+    modelName: "gpt-4.1",
     temperature: 0,
   }); // 必要に応じてモデル名や設定を調整
 
