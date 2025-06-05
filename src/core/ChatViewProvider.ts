@@ -15,13 +15,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   private _chatHistory: ChatMessage[] = [];
   private _chatModel: LanguageModelLike;
   private _workflow: Workflow;
+  private _extensionContext: vscode.ExtensionContext;
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
     _chatModel: LanguageModelLike,
+    extensionContext: vscode.ExtensionContext,
   ) {
     this._chatModel = _chatModel;
     this._workflow = new Workflow(this._chatModel);
+    this._extensionContext = extensionContext;
+
+    // Restore chat history from global state
+    this._chatHistory = this._extensionContext.globalState.get(
+      "taskHistory",
+      [],
+    );
   }
 
   public resolveWebviewView(
@@ -46,6 +55,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         case "clearChat":
           this._clearChat();
           break;
+        case "requestHistory":
+          // Send history when webview is ready
+          this._updateWebview();
+          break;
       }
     });
   }
@@ -67,7 +80,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     // Get active and open tabs
     const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
-    const activeFilePath = activeTab?.input instanceof vscode.TabInputText ? activeTab.input.uri.fsPath : undefined;
+    const activeFilePath =
+      activeTab?.input instanceof vscode.TabInputText
+        ? activeTab.input.uri.fsPath
+        : undefined;
 
     const openFilePaths: string[] = [];
     for (const tabGroup of vscode.window.tabGroups.all) {
@@ -91,7 +107,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     try {
       console.log("BEFORE WORKFLOW EXECUTION");
-      const result = await this._workflow.execute(message, activeFilePath, openFilePaths);
+      const result = await this._workflow.execute(
+        message,
+        activeFilePath,
+        openFilePaths,
+      );
       console.log("AFTER WORKFLOW EXECUTION");
 
       // Replace working message with final result
@@ -142,6 +162,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       type: "updateChat",
       messages: this._chatHistory,
     });
+
+    // Save chat history to global state
+    this._extensionContext.globalState.update("taskHistory", this._chatHistory);
   }
 
   private _getHtmlForWebview(webview: vscode.Webview) {

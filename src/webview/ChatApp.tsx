@@ -32,6 +32,12 @@ export function ChatApp() {
     };
 
     window.addEventListener("message", handleMessage);
+    
+    // Request initial chat history after component mounts
+    vscodeApi.postMessage({
+      type: "requestHistory"
+    });
+    
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
@@ -59,7 +65,7 @@ export function ChatApp() {
     });
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       sendMessage();
     }
@@ -100,7 +106,7 @@ export function ChatApp() {
           type="text"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
           placeholder="Type your message..."
         />
         <button onClick={sendMessage}>Send</button>

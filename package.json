@@ -37,7 +37,8 @@
         {
           "id": "codingAgentChat",
           "name": "Chat",
-          "type": "webview"
+          "type": "webview",
+          "retainContextWhenHidden": true
         }
       ]
     },
