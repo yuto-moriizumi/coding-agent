@@ -275,42 +275,4 @@ If you do not need to use a tool, respond to the user directly as plain text.`;
       ...kwargs,
     });
   }
-
-  // TODO: withStructuredOutput メソッドも必要に応じて実装
-  // public withStructuredOutput<
-  //   RunOutput extends Record<string, any> = Record<string, any>
-  // >(
-  //   outputSchema:
-  //     | StructuredOutputMethodParams<RunOutput, false>
-  //     | z.ZodType<RunOutput, any, any>,
-  //   config?: StructuredOutputMethodOptions<false>
-  // ): Runnable<BaseLanguageModelInput, RunOutput>;
-  // public withStructuredOutput<
-  //   RunOutput extends Record<string, any> = Record<string, any>
-  // >(
-  //   outputSchema:
-  //     | StructuredOutputMethodParams<RunOutput, true>
-  //     | z.ZodType<RunOutput, any, any>,
-  //   config?: StructuredOutputMethodOptions<true>
-  // ): Runnable<BaseLanguageModelInput, { stream: IterableReadableStream<RunOutput>; }>;
-  // public withStructuredOutput<
-  //   RunOutput extends Record<string, any> = Record<string, any>
-  // >(
-  //   outputSchema:
-  //     | StructuredOutputMethodParams<RunOutput, boolean>
-  //     | z.ZodType<RunOutput, any, any>,
-  //   config?: StructuredOutputMethodOptions<boolean>
-  // ):
-  //   | Runnable<BaseLanguageModelInput, RunOutput>
-  //   | Runnable<BaseLanguageModelInput, { stream: IterableReadableStream<RunOutput>; }> {
-  //   // This implementation is a simplified version and might need adjustments
-  //   // based on how VSCode Language Model API handles structured output.
-  //   // For now, it delegates to the parent or throws an error if not supported.
-  //   if (super.withStructuredOutput) {
-  //     return super.withStructuredOutput(outputSchema as any, config);
-  //   }
-  //   throw new Error(
-  //     "withStructuredOutput is not implemented for ChatVSCodeLanguageModelAPI yet."
-  //   );
-  // }
 }

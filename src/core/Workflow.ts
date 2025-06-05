@@ -5,7 +5,7 @@ import {
   HumanMessage,
   SystemMessage,
 } from "@langchain/core/messages";
-import { VSCodeTools } from "./VSCodeTools";
+import { createVSCodeTools } from "./VSCodeTools";
 import { LanguageModelLike } from "@langchain/core/language_models/base";
 import { SYSTEM_PROMPT } from "./constants";
 
@@ -17,7 +17,7 @@ export class Workflow {
   private agent;
 
   constructor(llm: LanguageModelLike) {
-    const tools = VSCodeTools.createTools();
+    const tools = createVSCodeTools();
     const memory = new MemorySaver();
 
     this.agent = createReactAgent({
