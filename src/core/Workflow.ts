@@ -1,6 +1,10 @@
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { MemorySaver } from "@langchain/langgraph-checkpoint";
-import { BaseMessage, HumanMessage } from "@langchain/core/messages";
+import {
+  BaseMessage,
+  HumanMessage,
+  SystemMessage,
+} from "@langchain/core/messages";
 import { VSCodeTools } from "./VSCodeTools";
 import { LanguageModelLike } from "@langchain/core/language_models/base";
 
@@ -30,7 +34,10 @@ export class Workflow {
 
     try {
       const initialState = {
-        messages: [new HumanMessage(userRequest)],
+        messages: [
+          new SystemMessage("Use tools as much as possible"),
+          new HumanMessage(userRequest),
+        ],
       };
 
       // Pass the config to invoke
