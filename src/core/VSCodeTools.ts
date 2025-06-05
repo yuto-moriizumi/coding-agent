@@ -1,7 +1,10 @@
 import * as vscode from "vscode";
 import * as path from "path";
+import * as fs from "fs/promises"; // fs/promises をインポート
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
+
+export const DIFF_VIEW_URI_SCHEME = "agent-diff"; // Clineのスキームを参考に独自のスキームを定義
 
 export class VSCodeTools {
   static createTools() {
@@ -54,14 +57,141 @@ export class VSCodeTools {
               ? filePath
               : path.join(this.getWorkspaceRoot(), filePath)
           );
-          const encoder = new TextEncoder();
-          await vscode.workspace.fs.writeFile(uri, encoder.encode(content));
-          return `Successfully wrote to ${filePath}`;
+          const originalContent = await this.readFileContent(uri).catch(
+            () => ""
+          ); // ファイルが存在しない場合は空文字列
+          const workspaceRoot = this.getWorkspaceRoot();
+          const relativeFilePath = path.relative(workspaceRoot, uri.fsPath);
+
+          // Diffを表示し、1秒後に実際の書き込みを行う
+          await this.showDiff(
+            originalContent,
+            content,
+            relativeFilePath,
+            uri,
+            content
+          );
+
+          return `Diff for ${relativeFilePath} displayed. File will be written in 1 second.`;
         } catch (error) {
-          return `Error writing file: ${error}`;
+          return `Error preparing to write file: ${error}`;
         }
       },
     });
+  }
+
+  private static async readFileContent(uri: vscode.Uri): Promise<string> {
+    try {
+      // ディスク上のファイルを直接読み込む
+      const content = await fs.readFile(uri.fsPath, { encoding: 'utf8' });
+      return content;
+    } catch (error) {
+      // ファイルが存在しないなどのエラーは無視し、空文字列を返す
+      return "";
+    }
+  }
+
+  private static async showDiff(
+    originalContent: string,
+    modifiedContent: string,
+    fileName: string,
+    targetUri: vscode.Uri,
+    finalContent: string
+  ) {
+    const workspaceRoot = this.getWorkspaceRoot();
+    const tmpDir = path.join(workspaceRoot, ".vscode-agent-tmp");
+    await vscode.workspace.fs.createDirectory(vscode.Uri.file(tmpDir)).then(
+      () => {},
+      (err) => {
+        if (err.code !== "EEXIST") {
+          console.error("Failed to create .vscode-agent-tmp directory:", err);
+        }
+      }
+    );
+
+    console.log(`[DEBUG] showDiff: originalContent length: ${originalContent.length}`);
+    console.log(`[DEBUG] showDiff: modifiedContent length: ${modifiedContent.length}`);
+
+    const originalContentBase64 = Buffer.from(originalContent).toString("base64");
+    console.log(`[DEBUG] showDiff: originalContentBase64 length: ${originalContentBase64.length}`);
+
+    // 一時ファイルは不要になるため、直接URIを構築
+    const originalUri = vscode.Uri.parse(`${DIFF_VIEW_URI_SCHEME}:${fileName}`).with({
+      query: originalContentBase64, // Base64エンコードしてクエリに渡す
+    });
+    const modifiedUri = targetUri; // 変更後のファイルは実際のファイルURIを使用
+
+    const fileExists = originalContent !== ""; // 元のコンテンツがあればファイルは存在するとみなす
+    const title = `${fileName}: ${fileExists ? "Original ↔ Agent's Changes" : "New File"} (Editable)`;
+
+    // Diffエディタを開く前に、実際のファイルの内容を更新
+    try {
+      const document = await vscode.workspace.openTextDocument(targetUri);
+      const edit = new vscode.WorkspaceEdit();
+      const fullRange = new vscode.Range(
+        document.positionAt(0),
+        document.positionAt(document.getText().length)
+      );
+      edit.replace(document.uri, fullRange, modifiedContent);
+      await vscode.workspace.applyEdit(edit);
+      // ドキュメントがダーティになっている可能性があるので保存
+      if (document.isDirty) {
+        await document.save();
+      }
+    } catch (error) {
+      console.error(`Error updating target file before diff: ${error}`);
+      vscode.window.showErrorMessage(`Diff表示前にファイルの更新に失敗しました: ${fileName} - ${error}`);
+      return; // エラーが発生した場合は処理を中断
+    }
+
+    await vscode.commands.executeCommand(
+      "vscode.diff",
+      originalUri,
+      modifiedUri,
+      title,
+      { preview: true }
+    );
+
+    // 2秒後に実際の書き込みと後処理
+    setTimeout(async () => {
+      try {
+        // ファイルは既に更新されているため、fs.writeFileは不要
+        vscode.window.showInformationMessage(
+          `ファイル '${fileName}' を更新しました。`
+        );
+
+        // Diffエディタのタブを閉じる
+        await this.closeAgentDiffViews();
+
+        // Diffエディタが完全に閉じるのを待ってから、編集後のファイルを開く
+        await new Promise((resolve) => setTimeout(resolve, 200)); // 200msの遅延
+        await vscode.window.showTextDocument(targetUri);
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `ファイルの書き込み中にエラーが発生しました: ${fileName} - ${error}`
+        );
+      } finally {
+        // 一時ファイルは使用しないため、削除ロジックは不要
+      }
+    }, 2000); // ユーザーの要望により2秒に変更
+
+  }
+
+  private static async closeAgentDiffViews() {
+    const tabs = vscode.window.tabGroups.all
+      .flatMap((tg) => tg.tabs)
+      .filter(
+        (tab) =>
+          tab.input instanceof vscode.TabInputTextDiff &&
+          tab.input?.original?.scheme === DIFF_VIEW_URI_SCHEME
+      );
+
+    for (const tab of tabs) {
+      // 変更が保存されていないDiffビューは閉じない（保存ポップアップを避けるため）
+      if (!tab.isDirty) {
+        await vscode.window.tabGroups.close(tab);
+      }
+    }
   }
 
   private static createCreateFileTool() {

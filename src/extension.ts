@@ -7,6 +7,7 @@ import { ChatVSCodeLanguageModelAPI } from "./core/ChatVSCodeLanguageModelAPI";
 import { HumanMessage } from "@langchain/core/messages";
 import { ChatOpenAI } from "@langchain/openai"; // ChatOpenAI をインポート
 import { ChatViewProvider } from "./core/ChatViewProvider";
+import { DIFF_VIEW_URI_SCHEME } from "./core/VSCodeTools"; // DIFF_VIEW_URI_SCHEME をインポート
 
 const ANNOTATION_PROMPT = `You are a code tutor who helps students learn how to write better code. Your job is to evaluate a block of code that the user gives you and then annotate any lines that could be improved with a brief suggestion and the reason why you are making that suggestion. Only make suggestions when you feel the severity is enough that it will impact the readability and maintainability of the code. Be friendly with your suggestions and remember that these are students so they need gentle guidance. Format each suggestion as a single JSON object. It is not necessary to wrap your response in triple backticks. Here is an example of what your response should look like:
 
@@ -86,6 +87,23 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(openChatCommand, annotateCommand);
+
+  // TextDocumentContentProvider を登録
+  const diffContentProvider = new (class implements vscode.TextDocumentContentProvider {
+    provideTextDocumentContent(uri: vscode.Uri): string {
+      console.log(`[DEBUG] diffContentProvider: URI query length: ${uri.query.length}`);
+      const decodedContent = Buffer.from(uri.query, "base64").toString("utf8");
+      console.log(`[DEBUG] diffContentProvider: decodedContent length: ${decodedContent.length}`);
+      // URIのクエリパラメータからBase64エンコードされたコンテンツを取得し、デコードして返す
+      return decodedContent;
+    }
+  })();
+  context.subscriptions.push(
+    vscode.workspace.registerTextDocumentContentProvider(
+      DIFF_VIEW_URI_SCHEME,
+      diffContentProvider
+    )
+  );
 }
 
 function applyDecoration(

@@ -7,6 +7,7 @@ import {
 } from "@langchain/core/messages";
 import { VSCodeTools } from "./VSCodeTools";
 import { LanguageModelLike } from "@langchain/core/language_models/base";
+import { SYSTEM_PROMPT } from "./constants";
 
 export interface CodingAgentState {
   messages: BaseMessage[];
@@ -35,7 +36,7 @@ export class Workflow {
     try {
       const initialState = {
         messages: [
-          new SystemMessage("Use tools as much as possible"),
+          new SystemMessage(SYSTEM_PROMPT),
           new HumanMessage(userRequest),
         ],
       };
