@@ -85,6 +85,7 @@
   "dependencies": {
     "@langchain/core": "^0.3.57",
     "@langchain/langgraph": "^0.3.0",
+    "dotenv": "^16.5.0",
     "langchain": "^0.3.27",
     "zod": "^3.25.49"
   }

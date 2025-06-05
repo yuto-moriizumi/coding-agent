@@ -1,8 +1,11 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
+import * as dotenv from "dotenv"; // dotenv をインポート
+import * as path from "path"; // path モジュールをインポート
 import { ChatVSCodeLanguageModelAPI } from "./core/ChatVSCodeLanguageModelAPI";
 import { HumanMessage } from "@langchain/core/messages";
+import { ChatOpenAI } from "@langchain/openai"; // ChatOpenAI をインポート
 import { ChatViewProvider } from "./core/ChatViewProvider";
 
 const ANNOTATION_PROMPT = `You are a code tutor who helps students learn how to write better code. Your job is to evaluate a block of code that the user gives you and then annotate any lines that could be improved with a brief suggestion and the reason why you are making that suggestion. Only make suggestions when you feel the severity is enough that it will impact the readability and maintainability of the code. Be friendly with your suggestions and remember that these are students so they need gentle guidance. Format each suggestion as a single JSON object. It is not necessary to wrap your response in triple backticks. Here is an example of what your response should look like:
@@ -13,12 +16,32 @@ const ANNOTATION_PROMPT = `You are a code tutor who helps students learn how to 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  // .env ファイルのパスを解決して読み込む
+  // 拡張機能のルートは context.extensionPath
+  // ビルド後のJSは dist/extension.js にあるので、.env も dist にあると仮定
+  const envPath = path.join(context.extensionPath, ".env"); // ルートの .env を参照する場合
+  // もし dist/.env を参照する場合は path.join(context.extensionPath, 'dist', '.env')
+  // ユーザーの指示は「distフォルダ内の.env」なので、そちらに合わせる
+  const distEnvPath = path.join(context.extensionPath, "dist", ".env");
+  const result = dotenv.config({ path: distEnvPath });
+
+  if (result.error) {
+    throw result.error; // エラーがあれば例外を投げる
+  } else {
+    console.log(`.env file loaded from: ${distEnvPath}`);
+  }
+
   console.log('Congratulations, your extension "coding-agent" is now active!');
 
-  const chatModel = new ChatVSCodeLanguageModelAPI({
-    vendor: "copilot",
-    family: "gpt-4.1",
-  });
+  // const chatModel = new ChatVSCodeLanguageModelAPI({
+  //   vendor: "copilot",
+  //   family: "gpt-4.1",
+  // });
+  // ChatOpenAI を使用した仮実装
+  const chatModel = new ChatOpenAI({
+    modelName: "gpt-4o",
+    temperature: 0,
+  }); // 必要に応じてモデル名や設定を調整
 
   // Register CodingAgent Chat Provider
   const codingAgentChatProvider = new ChatViewProvider(

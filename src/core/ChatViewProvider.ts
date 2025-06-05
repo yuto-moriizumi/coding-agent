@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
-import { ChatVSCodeLanguageModelAPI } from "./ChatVSCodeLanguageModelAPI";
-import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { Workflow } from "./Workflow";
+import { LanguageModelLike } from "@langchain/core/language_models/base";
 
 export interface ChatMessage {
   id: string;
@@ -14,12 +13,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "codingAgentChat";
   private _view?: vscode.WebviewView;
   private _chatHistory: ChatMessage[] = [];
-  private _chatModel: ChatVSCodeLanguageModelAPI;
+  private _chatModel: LanguageModelLike;
   private _workflow: Workflow;
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
-    _chatModel: ChatVSCodeLanguageModelAPI
+    _chatModel: LanguageModelLike
   ) {
     this._chatModel = _chatModel;
     this._workflow = new Workflow(this._chatModel);
@@ -78,7 +77,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     this._updateWebview();
 
     try {
+      console.log("BEFORE WORKFLOW EXECUTION");
       const result = await this._workflow.execute(message);
+      console.log("AFTER WORKFLOW EXECUTION");
 
       // Replace working message with final result
       this._chatHistory.pop(); // Remove working message
