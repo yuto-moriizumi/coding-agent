@@ -17,29 +17,27 @@ export const executeCommandTool = new DynamicStructuredTool({
         hideFromUser: true,
       });
 
-      return new Promise<string>((resolve) => {
-        const outputFile = path.join(
-          getWorkspaceRoot(),
-          `.agent_output_${Date.now()}.tmp`
-        );
+      const outputFile = path.join(
+        getWorkspaceRoot(),
+        `.agent_output_${Date.now()}.tmp`,
+      );
 
-        terminal.sendText(`${command} > "${outputFile}" 2>&1`);
-        terminal.sendText(`echo "COMMAND_FINISHED"`);
+      terminal.sendText(`${command} > "${outputFile}" 2>&1`);
+      terminal.sendText(`echo "COMMAND_FINISHED"`);
 
-        setTimeout(async () => {
-          try {
-            const uri = vscode.Uri.file(outputFile);
-            const document = await vscode.workspace.openTextDocument(uri);
-            const result = document.getText();
-            await vscode.workspace.fs.delete(uri);
-            terminal.dispose();
-            resolve(result || "Command executed successfully (no output)");
-          } catch (error) {
-            terminal.dispose();
-            resolve(`Command execution error: ${error}`);
-          }
-        }, 3000);
-      });
+      await new Promise<void>((resolve) => setTimeout(resolve, 3000)); // 3秒待機
+
+      try {
+        const uri = vscode.Uri.file(outputFile);
+        const document = await vscode.workspace.openTextDocument(uri);
+        const result = document.getText();
+        await vscode.workspace.fs.delete(uri);
+        terminal.dispose();
+        return result || "Command executed successfully (no output)";
+      } catch (error) {
+        terminal.dispose();
+        return `Command execution error: ${error}`;
+      }
     } catch (error) {
       return `Failed to execute command: ${error}`;
     }

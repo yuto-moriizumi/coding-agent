@@ -44,7 +44,7 @@ export class ChatVSCodeLanguageModelAPI extends BaseChatModel {
     console.log(
       `ChatVSCodeLanguageModelAPI initialized with ${
         params.tools?.length ?? 0
-      } tools`
+      } tools`,
     );
   }
 
@@ -55,7 +55,7 @@ export class ChatVSCodeLanguageModelAPI extends BaseChatModel {
   async _generate(
     messages: BaseMessage[],
     options?: this["ParsedCallOptions"],
-    _runManager?: CallbackManagerForLLMRun
+    _runManager?: CallbackManagerForLLMRun,
   ): Promise<ChatResult> {
     let processedMessages = [...messages];
 
@@ -125,7 +125,7 @@ If you do not need to use a tool, respond to the user directly as plain text.`;
           processedMessages.unshift(humanMessageWithPrompt);
         }
         console.warn(
-          "Tool prompt was not appended to an existing HumanMessage. It was added to the beginning or a new message."
+          "Tool prompt was not appended to an existing HumanMessage. It was added to the beginning or a new message.",
         );
       }
     }
@@ -136,7 +136,7 @@ If you do not need to use a tool, respond to the user directly as plain text.`;
     const models = await vscode.lm.selectChatModels();
     console.log({ models });
     await vscode.window.showInformationMessage(
-      `Available models: ${JSON.stringify(models)}`
+      `Available models: ${JSON.stringify(models)}`,
     );
     console.log(141);
     const [model] = await vscode.lm.selectChatModels({
@@ -147,7 +147,7 @@ If you do not need to use a tool, respond to the user directly as plain text.`;
 
     if (!model) {
       throw new Error(
-        `No VS Code Language Model found for vendor: ${this.vendor}, family: ${this.family}`
+        `No VS Code Language Model found for vendor: ${this.vendor}, family: ${this.family}`,
       );
     }
     console.log(152);
@@ -160,7 +160,7 @@ If you do not need to use a tool, respond to the user directly as plain text.`;
       const chatResponse = await model.sendRequest(
         vscodeMessages,
         {},
-        cancellationToken
+        cancellationToken,
       );
 
       let accumulatedResponse = "";
@@ -220,14 +220,14 @@ If you do not need to use a tool, respond to the user directly as plain text.`;
   }
 
   private convertMessagesToVSCode(
-    messages: BaseMessage[]
+    messages: BaseMessage[],
   ): vscode.LanguageModelChatMessage[] {
     return messages.map((message) => {
       if (message instanceof HumanMessage) {
         return vscode.LanguageModelChatMessage.User(message.content as string);
       } else if (message instanceof AIMessage) {
         return vscode.LanguageModelChatMessage.Assistant(
-          message.content as string
+          message.content as string,
         );
       } else if (message instanceof SystemMessage) {
         return vscode.LanguageModelChatMessage.User(message.content as string);
@@ -238,7 +238,7 @@ If you do not need to use a tool, respond to the user directly as plain text.`;
   }
 
   private createCancellationToken(
-    signal: AbortSignal
+    signal: AbortSignal,
   ): vscode.CancellationToken {
     const source = new vscode.CancellationTokenSource();
 
@@ -254,8 +254,7 @@ If you do not need to use a tool, respond to the user directly as plain text.`;
   // bindTools メソッドの実装
   public bindTools(
     tools: (StructuredToolInterface | Record<string, unknown>)[],
-
-    kwargs?: Partial<any> // kwargs の型をより具体的にすることも可能
+    kwargs?: Partial<any>, // kwargs の型をより具体的にすることも可能
   ): Runnable<BaseLanguageModelInput, AIMessageChunk> {
     const toolDefinitions = tools.map(convertToOpenAITool); // convertToToolDefinition を convertToOpenAITool に変更
 
@@ -266,7 +265,7 @@ If you do not need to use a tool, respond to the user directly as plain text.`;
       ...kwargs,
     });
     const constructor = this.constructor as new (
-      params: ChatVSCodeLanguageModelAPIParams & { [key: string]: any }
+      params: ChatVSCodeLanguageModelAPIParams & { [key: string]: any },
     ) => this;
     console.log("Binding tools:", toolDefinitions);
     return new constructor({

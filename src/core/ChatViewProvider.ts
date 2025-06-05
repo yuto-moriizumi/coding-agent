@@ -18,7 +18,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
-    _chatModel: LanguageModelLike
+    _chatModel: LanguageModelLike,
   ) {
     this._chatModel = _chatModel;
     this._workflow = new Workflow(this._chatModel);
@@ -27,7 +27,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
     _context: vscode.WebviewViewResolveContext,
-    _token: vscode.CancellationToken
+    _token: vscode.CancellationToken,
   ) {
     this._view = webviewView;
 
@@ -133,10 +133,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
   private _getHtmlForWebview(webview: vscode.Webview) {
     const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "dist", "webview.js")
+      vscode.Uri.joinPath(this._extensionUri, "dist", "webview.js"),
     );
     const styleUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "src", "webview", "styles.css")
+      vscode.Uri.joinPath(this._extensionUri, "src", "webview", "styles.css"),
     );
 
     return `<!DOCTYPE html>

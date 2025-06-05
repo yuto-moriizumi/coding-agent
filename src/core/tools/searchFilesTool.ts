@@ -14,10 +14,7 @@ export const searchFilesTool = new DynamicStructuredTool({
       .optional()
       .describe("File extensions to search in (e.g., ['.ts', '.js'])"),
   }),
-  func: async ({
-    searchTerm,
-    extensions = [".ts", ".js", ".json", ".md"],
-  }) => {
+  func: async ({ searchTerm, extensions = [".ts", ".js", ".json", ".md"] }) => {
     try {
       const results: Array<{
         file: string;
@@ -33,7 +30,7 @@ export const searchFilesTool = new DynamicStructuredTool({
       const pattern = `**/*{${extensions.join(",")}}`;
       const files = await vscode.workspace.findFiles(
         pattern,
-        "**/node_modules/**"
+        "**/node_modules/**",
       );
 
       for (const file of files) {

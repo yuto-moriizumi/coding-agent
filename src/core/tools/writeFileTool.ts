@@ -9,7 +9,7 @@ export const DIFF_VIEW_URI_SCHEME = "agent-diff";
 
 async function readFileContent(uri: vscode.Uri): Promise<string> {
   try {
-    const content = await fs.readFile(uri.fsPath, { encoding: 'utf8' });
+    const content = await fs.readFile(uri.fsPath, { encoding: "utf8" });
     return content;
   } catch (error) {
     return "";
@@ -21,7 +21,6 @@ async function showDiff(
   modifiedContent: string,
   fileName: string,
   targetUri: vscode.Uri,
-  finalContent: string
 ) {
   const workspaceRoot = getWorkspaceRoot();
   const tmpDir = path.join(workspaceRoot, ".vscode-agent-tmp");
@@ -31,29 +30,39 @@ async function showDiff(
       if (err.code !== "EEXIST") {
         console.error("Failed to create .vscode-agent-tmp directory:", err);
       }
-    }
+    },
   );
 
-  console.log(`[DEBUG] showDiff: originalContent length: ${originalContent.length}`);
-  console.log(`[DEBUG] showDiff: modifiedContent length: ${modifiedContent.length}`);
+  console.log(
+    `[DEBUG] showDiff: originalContent length: ${originalContent.length}`,
+  );
+  console.log(
+    `[DEBUG] showDiff: modifiedContent length: ${modifiedContent.length}`,
+  );
 
   const originalContentBase64 = Buffer.from(originalContent).toString("base64");
-  console.log(`[DEBUG] showDiff: originalContentBase64 length: ${originalContentBase64.length}`);
+  console.log(
+    `[DEBUG] showDiff: originalContentBase64 length: ${originalContentBase64.length}`,
+  );
 
-  const originalUri = vscode.Uri.parse(`${DIFF_VIEW_URI_SCHEME}:${fileName}`).with({
+  const originalUri = vscode.Uri.parse(
+    `${DIFF_VIEW_URI_SCHEME}:${fileName}`,
+  ).with({
     query: originalContentBase64,
   });
   const modifiedUri = targetUri;
 
   const fileExists = originalContent !== "";
-  const title = `${fileName}: ${fileExists ? "Original ↔ Agent's Changes" : "New File"} (Editable)`;
+  const title = `${fileName}: ${
+    fileExists ? "Original ↔ Agent's Changes" : "New File"
+  } (Editable)`;
 
   try {
     const document = await vscode.workspace.openTextDocument(targetUri);
     const edit = new vscode.WorkspaceEdit();
     const fullRange = new vscode.Range(
       document.positionAt(0),
-      document.positionAt(document.getText().length)
+      document.positionAt(document.getText().length),
     );
     edit.replace(document.uri, fullRange, modifiedContent);
     await vscode.workspace.applyEdit(edit);
@@ -62,7 +71,9 @@ async function showDiff(
     }
   } catch (error) {
     console.error(`Error updating target file before diff: ${error}`);
-    vscode.window.showErrorMessage(`Diff表示前にファイルの更新に失敗しました: ${fileName} - ${error}`);
+    vscode.window.showErrorMessage(
+      `Diff表示前にファイルの更新に失敗しました: ${fileName} - ${error}`,
+    );
     return;
   }
 
@@ -71,20 +82,20 @@ async function showDiff(
     originalUri,
     modifiedUri,
     title,
-    { preview: true }
+    { preview: true },
   );
 
   setTimeout(async () => {
     try {
       vscode.window.showInformationMessage(
-        `ファイル '${fileName}' を更新しました。`
+        `ファイル '${fileName}' を更新しました。`,
       );
       await closeAgentDiffViews();
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise<void>((resolve) => setTimeout(resolve, 200));
       await vscode.window.showTextDocument(targetUri);
     } catch (error) {
       vscode.window.showErrorMessage(
-        `ファイルの書き込み中にエラーが発生しました: ${fileName} - ${error}`
+        `ファイルの書き込み中にエラーが発生しました: ${fileName} - ${error}`,
       );
     }
   }, 2000);
@@ -96,7 +107,7 @@ async function closeAgentDiffViews() {
     .filter(
       (tab) =>
         tab.input instanceof vscode.TabInputTextDiff &&
-        tab.input?.original?.scheme === DIFF_VIEW_URI_SCHEME
+        tab.input?.original?.scheme === DIFF_VIEW_URI_SCHEME,
     );
 
   for (const tab of tabs) {
@@ -118,21 +129,13 @@ export const writeFileTool = new DynamicStructuredTool({
       const uri = vscode.Uri.file(
         path.isAbsolute(filePath)
           ? filePath
-          : path.join(getWorkspaceRoot(), filePath)
+          : path.join(getWorkspaceRoot(), filePath),
       );
-      const originalContent = await readFileContent(uri).catch(
-        () => ""
-      );
+      const originalContent = await readFileContent(uri).catch(() => "");
       const workspaceRoot = getWorkspaceRoot();
       const relativeFilePath = path.relative(workspaceRoot, uri.fsPath);
 
-      await showDiff(
-        originalContent,
-        content,
-        relativeFilePath,
-        uri,
-        content
-      );
+      await showDiff(originalContent, content, relativeFilePath, uri);
 
       return `Diff for ${relativeFilePath} displayed. File will be written in 1 second.`;
     } catch (error) {

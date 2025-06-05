@@ -15,7 +15,7 @@ export const readFileTool = new DynamicStructuredTool({
       const uri = vscode.Uri.file(
         path.isAbsolute(filePath)
           ? filePath
-          : path.join(getWorkspaceRoot(), filePath)
+          : path.join(getWorkspaceRoot(), filePath),
       );
       const document = await vscode.workspace.openTextDocument(uri);
       return document.getText();

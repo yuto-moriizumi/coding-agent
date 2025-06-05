@@ -1,5 +1,6 @@
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
+import prettierConfig from "eslint-config-prettier";
 
 export default [{
     files: ["**/*.ts"],
@@ -7,6 +8,7 @@ export default [{
     plugins: {
         "@typescript-eslint": typescriptEslint,
     },
+}, prettierConfig, {
 
     languageOptions: {
         parser: tsParser,

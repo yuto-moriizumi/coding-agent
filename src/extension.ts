@@ -47,13 +47,13 @@ export function activate(context: vscode.ExtensionContext) {
   // Register CodingAgent Chat Provider
   const codingAgentChatProvider = new ChatViewProvider(
     context.extensionUri,
-    chatModel
+    chatModel,
   );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       ChatViewProvider.viewType,
-      codingAgentChatProvider
-    )
+      codingAgentChatProvider,
+    ),
   );
 
   // Register commands
@@ -61,7 +61,7 @@ export function activate(context: vscode.ExtensionContext) {
     "codingAgent.openChat",
     () => {
       vscode.commands.executeCommand("workbench.view.extension.codingAgent");
-    }
+    },
   );
 
   const annotateCommand = vscode.commands.registerTextEditorCommand(
@@ -80,20 +80,26 @@ export function activate(context: vscode.ExtensionContext) {
       } catch (error) {
         console.error("Error using ChatVSCodeLanguageModelAPI:", error);
         vscode.window.showErrorMessage(
-          `Failed to get code annotations: ${error}`
+          `Failed to get code annotations: ${error}`,
         );
       }
-    }
+    },
   );
 
   context.subscriptions.push(openChatCommand, annotateCommand);
 
   // TextDocumentContentProvider を登録
-  const diffContentProvider = new (class implements vscode.TextDocumentContentProvider {
+  const diffContentProvider = new (class
+    implements vscode.TextDocumentContentProvider
+  {
     provideTextDocumentContent(uri: vscode.Uri): string {
-      console.log(`[DEBUG] diffContentProvider: URI query length: ${uri.query.length}`);
+      console.log(
+        `[DEBUG] diffContentProvider: URI query length: ${uri.query.length}`,
+      );
       const decodedContent = Buffer.from(uri.query, "base64").toString("utf8");
-      console.log(`[DEBUG] diffContentProvider: decodedContent length: ${decodedContent.length}`);
+      console.log(
+        `[DEBUG] diffContentProvider: decodedContent length: ${decodedContent.length}`,
+      );
       // URIのクエリパラメータからBase64エンコードされたコンテンツを取得し、デコードして返す
       return decodedContent;
     }
@@ -101,15 +107,15 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.registerTextDocumentContentProvider(
       DIFF_VIEW_URI_SCHEME,
-      diffContentProvider
-    )
+      diffContentProvider,
+    ),
   );
 }
 
 function applyDecoration(
   editor: vscode.TextEditor,
   line: number,
-  suggestion: string
+  suggestion: string,
 ) {
   const decorationType = vscode.window.createTextEditorDecorationType({
     after: {
@@ -122,7 +128,7 @@ function applyDecoration(
   const lineLength = editor.document.lineAt(line - 1).text.length;
   const range = new vscode.Range(
     new vscode.Position(line - 1, lineLength),
-    new vscode.Position(line - 1, lineLength)
+    new vscode.Position(line - 1, lineLength),
   );
 
   const decoration = { range: range, hoverMessage: suggestion };
@@ -132,7 +138,7 @@ function applyDecoration(
 
 async function parseLangChainResponse(
   response: string,
-  textEditor: vscode.TextEditor
+  textEditor: vscode.TextEditor,
 ) {
   const lines = response.split("\n");
 

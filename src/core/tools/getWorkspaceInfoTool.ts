@@ -20,11 +20,10 @@ export const getWorkspaceInfoTool = new DynamicStructuredTool({
       let projectInfo = "";
       try {
         const packageJsonUri = vscode.Uri.file(
-          path.join(workspaceRoot, "package.json")
+          path.join(workspaceRoot, "package.json"),
         );
-        const document = await vscode.workspace.openTextDocument(
-          packageJsonUri
-        );
+        const document =
+          await vscode.workspace.openTextDocument(packageJsonUri);
         const packageJson = JSON.parse(document.getText());
         projectInfo = `Project: ${
           packageJson.name || workspaceName
