@@ -48,6 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
   const codingAgentChatProvider = new ChatViewProvider(
     context.extensionUri,
     chatModel,
+    context, // context を渡す
   );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
