@@ -16,8 +16,17 @@ declare global {
   }
 }
 
+interface OpenAIModel {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+}
+
 interface SettingsData {
   adapter: "ChatVSCodeLanguageModelAPI" | "ChatOpenAI";
+  openAIModel: string;
+  availableModels?: OpenAIModel[];
 }
 
 export function ChatApp() {
@@ -25,7 +34,9 @@ export function ChatApp() {
   const [inputValue, setInputValue] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<SettingsData>({
-    adapter: "ChatVSCodeLanguageModelAPI"
+    adapter: "ChatVSCodeLanguageModelAPI",
+    openAIModel: "gpt-4o",
+    availableModels: []
   });
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [vscodeApi] = useState(() => window.acquireVsCodeApi());
@@ -117,6 +128,26 @@ export function ChatApp() {
             <option value="ChatOpenAI">OpenAI API</option>
           </select>
         </div>
+        
+        {settings.adapter === "ChatOpenAI" && (
+          <div className="setting-item">
+            <label htmlFor="openai-model-select">OpenAI Model:</label>
+            <select
+              id="openai-model-select"
+              value={settings.openAIModel}
+              onChange={(e) => handleSettingsChange({
+                ...settings,
+                openAIModel: e.target.value
+              })}
+            >
+              {settings.availableModels?.map((model) => (
+                <option key={model.id} value={model.id} title={model.description}>
+                  {model.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
     </div>
   );

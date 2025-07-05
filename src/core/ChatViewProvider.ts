@@ -3,6 +3,7 @@ import { Workflow } from "./Workflow";
 import { LanguageModelLike } from "@langchain/core/language_models/base";
 import { ChatVSCodeLanguageModelAPI } from "./ChatVSCodeLanguageModelAPI";
 import { ChatOpenAI } from "@langchain/openai";
+import { OPENAI_MODELS, DEFAULT_OPENAI_MODEL, OpenAIModel } from "./openAIModels";
 
 export interface ChatMessage {
   id: string;
@@ -13,6 +14,8 @@ export interface ChatMessage {
 
 export interface SettingsData {
   adapter: "ChatVSCodeLanguageModelAPI" | "ChatOpenAI";
+  openAIModel: string;
+  availableModels?: OpenAIModel[];
 }
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
@@ -39,7 +42,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     // Restore settings from global state
     this._settings = this._extensionContext.globalState.get(
       "codingAgentSettings",
-      { adapter: "ChatVSCodeLanguageModelAPI" }
+      { adapter: "ChatVSCodeLanguageModelAPI", openAIModel: DEFAULT_OPENAI_MODEL, availableModels: OPENAI_MODELS }
     );
 
     // Initialize chat model based on settings
@@ -62,6 +65,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     this._updateSettings();
   }
 
+  public async updateOpenAIModel(modelName: string) {
+    this._settings.openAIModel = modelName;
+    this._extensionContext.globalState.update("codingAgentSettings", this._settings);
+    if (this._settings.adapter === "ChatOpenAI") {
+      await this._updateChatModel();
+    }
+    this._updateSettings();
+  }
+
   private _createChatModel(adapter: "ChatVSCodeLanguageModelAPI" | "ChatOpenAI"): LanguageModelLike {
     if (adapter === "ChatVSCodeLanguageModelAPI") {
       return new ChatVSCodeLanguageModelAPI({
@@ -70,7 +82,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       });
     } else {
       return new ChatOpenAI({
-        modelName: "gpt-4o",
+        modelName: this._settings.openAIModel || "gpt-4o",
         temperature: 0,
       });
     }
@@ -226,9 +238,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       return;
     }
 
+    // Always include the latest available models
+    const settingsWithModels = {
+      ...this._settings,
+      availableModels: OPENAI_MODELS
+    };
+
     this._view.webview.postMessage({
       type: "updateSettings",
-      settings: this._settings,
+      settings: settingsWithModels,
     });
   }
 
