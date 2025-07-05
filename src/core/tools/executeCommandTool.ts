@@ -5,15 +5,13 @@ import * as path from "path";
 import { getWorkspaceRoot } from "../getWorkspaceRoot";
 import { getNickname } from "../getNickname";
 
-const executeCommandSchema = z.object({
-  command: z.string().describe("The shell command to execute"),
-});
-
 export const executeCommandTool = new DynamicStructuredTool({
   name: "execute_command",
   description: "Execute a shell command in the workspace",
-  schema: executeCommandSchema,
-  func: async ({ command }: z.infer<typeof executeCommandSchema>) => {
+  schema: z.object({
+    command: z.string().describe("The shell command to execute"),
+  }),
+  func: async ({ command }) => {
     try {
       const terminal = vscode.window.createTerminal({
         name: `${getNickname()} Executor`,

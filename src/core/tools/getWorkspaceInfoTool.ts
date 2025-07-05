@@ -4,12 +4,10 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { getWorkspaceRoot } from "../getWorkspaceRoot";
 
-const getWorkspaceInfoSchema = z.object({});
-
 export const getWorkspaceInfoTool = new DynamicStructuredTool({
   name: "get_workspace_info",
   description: "Get information about the current workspace",
-  schema: getWorkspaceInfoSchema,
+  schema: z.object({}),
   func: async () => {
     try {
       if (!vscode.workspace.workspaceFolders) {

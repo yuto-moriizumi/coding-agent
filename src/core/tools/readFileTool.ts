@@ -4,15 +4,13 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { getWorkspaceRoot } from "../getWorkspaceRoot";
 
-const readFileSchema = z.object({
-  filePath: z.string().describe("The path to the file to read"),
-});
-
 export const readFileTool = new DynamicStructuredTool({
   name: "read_file",
   description: "Read the contents of a file in the workspace",
-  schema: readFileSchema,
-  func: async ({ filePath }: z.infer<typeof readFileSchema>) => {
+  schema: z.object({
+    filePath: z.string().describe("The path to the file to read"),
+  }),
+  func: async ({ filePath }) => {
     try {
       const uri = vscode.Uri.file(
         path.isAbsolute(filePath)

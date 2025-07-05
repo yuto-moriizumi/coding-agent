@@ -4,18 +4,16 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { getWorkspaceRoot } from "../getWorkspaceRoot";
 
-const listFilesSchema = z.object({
-  directoryPath: z
-    .string()
-    .optional()
-    .describe("The directory path to list (defaults to workspace root)"),
-});
-
 export const listFilesTool = new DynamicStructuredTool({
   name: "list_files",
   description: "List files in a directory within the workspace",
-  schema: listFilesSchema,
-  func: async ({ directoryPath = "" }: z.infer<typeof listFilesSchema>) => {
+  schema: z.object({
+    directoryPath: z
+      .string()
+      .optional()
+      .describe("The directory path to list (defaults to workspace root)"),
+  }),
+  func: async ({ directoryPath = "" }) => {
     try {
       const workspaceRoot = getWorkspaceRoot();
       const fullPath = path.join(workspaceRoot, directoryPath);
