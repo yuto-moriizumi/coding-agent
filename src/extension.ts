@@ -16,16 +16,16 @@ export function activate(context: vscode.ExtensionContext) {
 
   console.log('Congratulations, your extension "coding-agent" is now active!');
 
-  // Register CodingAgent Chat Provider
+  // Register Chat Provider
   // モデルの初期化はChatViewProvider内で設定に基づいて行われる
-  const codingAgentChatProvider = new ChatViewProvider(
+  const chatProvider = new ChatViewProvider(
     context.extensionUri,
     context, // context を渡す
   );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       ChatViewProvider.viewType,
-      codingAgentChatProvider,
+      chatProvider,
     ),
   );
 
@@ -49,7 +49,7 @@ export function activate(context: vscode.ExtensionContext) {
         ];
 
         // ChatViewProviderから現在のモデルを取得
-        const currentModel = codingAgentChatProvider.getChatModel();
+        const currentModel = chatProvider.getChatModel();
         const result = await currentModel.invoke(messages);
         const content = typeof result === 'string' ? result : (result as any).content || '';
         await parseLangChainResponse(content, textEditor);

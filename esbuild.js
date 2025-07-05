@@ -37,6 +37,9 @@ async function main() {
     outfile: "dist/extension.js",
     external: ["vscode"],
     logLevel: "silent",
+    define: {
+      'process.env.NICKNAME': JSON.stringify(process.env.NICKNAME || 'Volga'),
+    },
     plugins: [
       /* add to the end of plugins array */
       esbuildProblemMatcherPlugin,
@@ -54,6 +57,9 @@ async function main() {
     outfile: "dist/webview.js",
     logLevel: "silent",
     jsx: "automatic",
+    define: {
+      'process.env.NICKNAME': JSON.stringify(process.env.NICKNAME || 'Volga'),
+    },
     plugins: [esbuildProblemMatcherPlugin],
   });
 

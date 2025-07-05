@@ -4,6 +4,7 @@ import { LanguageModelLike } from "@langchain/core/language_models/base";
 import { ChatVSCodeLanguageModelAPI } from "./ChatVSCodeLanguageModelAPI";
 import { ChatOpenAI } from "@langchain/openai";
 import { OPENAI_MODELS, DEFAULT_OPENAI_MODEL, OpenAIModel } from "./openAIModels";
+import { getNickname } from "./getNickname";
 
 export interface ChatMessage {
   id: string;
@@ -175,7 +176,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     const workingMessage: ChatMessage = {
       id: (Date.now() + 1).toString(),
       role: "assistant",
-      content: "🤖 Analyzing your request and creating TODO workflow...",
+      content: `🤖 ${getNickname()} is analyzing your request and creating TODO workflow...`,
       timestamp: Date.now(),
     };
 

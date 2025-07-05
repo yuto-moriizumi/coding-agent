@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useState, useEffect, useRef } from "react";
+import { getNickname } from "../core/getNickname";
 
 interface ChatMessage {
   id: string;
@@ -38,7 +39,7 @@ export function ChatApp() {
     adapter: "ChatVSCodeLanguageModelAPI",
     openAIModel: "gpt-4o",
     openAIApiKey: "",
-    availableModels: []
+    availableModels: [],
   });
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [vscodeApi] = useState(() => window.acquireVsCodeApi());
@@ -55,15 +56,15 @@ export function ChatApp() {
     };
 
     window.addEventListener("message", handleMessage);
-    
+
     // Request initial chat history and settings after component mounts
     vscodeApi.postMessage({
-      type: "requestHistory"
+      type: "requestHistory",
     });
     vscodeApi.postMessage({
-      type: "requestSettings"
+      type: "requestSettings",
     });
-    
+
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
@@ -99,7 +100,7 @@ export function ChatApp() {
     setSettings(newSettings);
     vscodeApi.postMessage({
       type: "updateSettings",
-      settings: newSettings
+      settings: newSettings,
     });
   };
 
@@ -121,16 +122,22 @@ export function ChatApp() {
           <select
             id="adapter-select"
             value={settings.adapter}
-            onChange={(e) => handleSettingsChange({
-              ...settings,
-              adapter: e.target.value as "ChatVSCodeLanguageModelAPI" | "ChatOpenAI"
-            })}
+            onChange={(e) =>
+              handleSettingsChange({
+                ...settings,
+                adapter: e.target.value as
+                  | "ChatVSCodeLanguageModelAPI"
+                  | "ChatOpenAI",
+              })
+            }
           >
-            <option value="ChatVSCodeLanguageModelAPI">VSCode Language Model API</option>
+            <option value="ChatVSCodeLanguageModelAPI">
+              VSCode Language Model API
+            </option>
             <option value="ChatOpenAI">OpenAI API</option>
           </select>
         </div>
-        
+
         {settings.adapter === "ChatOpenAI" && (
           <>
             <div className="setting-item">
@@ -139,10 +146,12 @@ export function ChatApp() {
                 type="password"
                 id="openai-api-key"
                 value={settings.openAIApiKey || ""}
-                onChange={(e) => handleSettingsChange({
-                  ...settings,
-                  openAIApiKey: e.target.value
-                })}
+                onChange={(e) =>
+                  handleSettingsChange({
+                    ...settings,
+                    openAIApiKey: e.target.value,
+                  })
+                }
                 placeholder="Enter your OpenAI API key"
               />
             </div>
@@ -151,13 +160,19 @@ export function ChatApp() {
               <select
                 id="openai-model-select"
                 value={settings.openAIModel}
-                onChange={(e) => handleSettingsChange({
-                  ...settings,
-                  openAIModel: e.target.value
-                })}
+                onChange={(e) =>
+                  handleSettingsChange({
+                    ...settings,
+                    openAIModel: e.target.value,
+                  })
+                }
               >
                 {settings.availableModels?.map((model) => (
-                  <option key={model.id} value={model.id} title={model.description}>
+                  <option
+                    key={model.id}
+                    value={model.id}
+                    title={model.description}
+                  >
                     {model.name}
                   </option>
                 ))}
@@ -172,7 +187,7 @@ export function ChatApp() {
   return (
     <div className="chat-app">
       <div className="header">
-        <h3>CodingAgent Chat</h3>
+        <h3>Agent {getNickname()}</h3>
         <div className="header-buttons">
           <button id="clearButton" onClick={clearChat}>
             Clear
@@ -190,8 +205,8 @@ export function ChatApp() {
           <div className="message assistant">
             <div className="message-header">Assistant</div>
             <div className="message-content">
-              Hello! I'm CodingAgent, your AI coding assistant. How can I help
-              you today?
+              Hello! I'm {getNickname()}, your AI coding assistant. How can I
+              help you today?
             </div>
           </div>
         ) : (

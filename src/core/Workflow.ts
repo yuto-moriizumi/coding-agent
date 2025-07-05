@@ -9,7 +9,7 @@ import { createVSCodeTools } from "./tools";
 import { LanguageModelLike } from "@langchain/core/language_models/base";
 import { getSystemPrompt } from "./getSystemPrompt";
 
-export interface CodingAgentState {
+export interface AgentState {
   messages: BaseMessage[];
 }
 
@@ -31,7 +31,7 @@ export class Workflow {
     userRequest: string,
     activeFilePath?: string,
     openFilePaths?: string[],
-  ): Promise<CodingAgentState> {
+  ): Promise<AgentState> {
     // For simplicity, using a fixed thread_id.
     // In a real application, you'd manage this dynamically.
     const threadId = "coding-agent-thread";

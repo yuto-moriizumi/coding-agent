@@ -3,6 +3,7 @@ import { z } from "zod";
 import * as vscode from "vscode";
 import * as path from "path";
 import { getWorkspaceRoot } from "../getWorkspaceRoot";
+import { getNickname } from "../getNickname";
 
 export const executeCommandTool = new DynamicStructuredTool({
   name: "execute_command",
@@ -13,7 +14,7 @@ export const executeCommandTool = new DynamicStructuredTool({
   func: async ({ command }) => {
     try {
       const terminal = vscode.window.createTerminal({
-        name: "CodingAgent Executor",
+        name: `${getNickname()} Executor`,
         hideFromUser: true,
       });
 
