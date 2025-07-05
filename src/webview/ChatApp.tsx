@@ -26,6 +26,7 @@ interface OpenAIModel {
 interface SettingsData {
   adapter: "ChatVSCodeLanguageModelAPI" | "ChatOpenAI";
   openAIModel: string;
+  openAIApiKey?: string;
   availableModels?: OpenAIModel[];
 }
 
@@ -36,6 +37,7 @@ export function ChatApp() {
   const [settings, setSettings] = useState<SettingsData>({
     adapter: "ChatVSCodeLanguageModelAPI",
     openAIModel: "gpt-4o",
+    openAIApiKey: "",
     availableModels: []
   });
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -130,23 +132,38 @@ export function ChatApp() {
         </div>
         
         {settings.adapter === "ChatOpenAI" && (
-          <div className="setting-item">
-            <label htmlFor="openai-model-select">OpenAI Model:</label>
-            <select
-              id="openai-model-select"
-              value={settings.openAIModel}
-              onChange={(e) => handleSettingsChange({
-                ...settings,
-                openAIModel: e.target.value
-              })}
-            >
-              {settings.availableModels?.map((model) => (
-                <option key={model.id} value={model.id} title={model.description}>
-                  {model.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <>
+            <div className="setting-item">
+              <label htmlFor="openai-api-key">OpenAI API Key:</label>
+              <input
+                type="password"
+                id="openai-api-key"
+                value={settings.openAIApiKey || ""}
+                onChange={(e) => handleSettingsChange({
+                  ...settings,
+                  openAIApiKey: e.target.value
+                })}
+                placeholder="Enter your OpenAI API key"
+              />
+            </div>
+            <div className="setting-item">
+              <label htmlFor="openai-model-select">OpenAI Model:</label>
+              <select
+                id="openai-model-select"
+                value={settings.openAIModel}
+                onChange={(e) => handleSettingsChange({
+                  ...settings,
+                  openAIModel: e.target.value
+                })}
+              >
+                {settings.availableModels?.map((model) => (
+                  <option key={model.id} value={model.id} title={model.description}>
+                    {model.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -15,6 +15,7 @@ export interface ChatMessage {
 export interface SettingsData {
   adapter: "ChatVSCodeLanguageModelAPI" | "ChatOpenAI";
   openAIModel: string;
+  openAIApiKey?: string;
   availableModels?: OpenAIModel[];
 }
 
@@ -42,7 +43,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     // Restore settings from global state
     this._settings = this._extensionContext.globalState.get(
       "codingAgentSettings",
-      { adapter: "ChatVSCodeLanguageModelAPI", openAIModel: DEFAULT_OPENAI_MODEL, availableModels: OPENAI_MODELS }
+      { adapter: "ChatVSCodeLanguageModelAPI", openAIModel: DEFAULT_OPENAI_MODEL, openAIApiKey: "", availableModels: OPENAI_MODELS }
     );
 
     // Initialize chat model based on settings
@@ -74,6 +75,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     this._updateSettings();
   }
 
+  public async updateOpenAIApiKey(apiKey: string) {
+    this._settings.openAIApiKey = apiKey;
+    this._extensionContext.globalState.update("codingAgentSettings", this._settings);
+    if (this._settings.adapter === "ChatOpenAI") {
+      await this._updateChatModel();
+    }
+    this._updateSettings();
+  }
+
   private _createChatModel(adapter: "ChatVSCodeLanguageModelAPI" | "ChatOpenAI"): LanguageModelLike {
     if (adapter === "ChatVSCodeLanguageModelAPI") {
       return new ChatVSCodeLanguageModelAPI({
@@ -84,6 +94,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       return new ChatOpenAI({
         modelName: this._settings.openAIModel || "gpt-4o",
         temperature: 0,
+        apiKey: this._settings.openAIApiKey || "",
       });
     }
   }

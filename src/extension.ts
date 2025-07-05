@@ -1,8 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import * as dotenv from "dotenv"; // dotenv をインポート
-import * as path from "path"; // path モジュールをインポート
 import { HumanMessage } from "@langchain/core/messages";
 import { ChatViewProvider } from "./core/ChatViewProvider";
 import { DIFF_VIEW_URI_SCHEME } from "./core/tools/writeFileTool"; // DIFF_VIEW_URI_SCHEME をインポート
@@ -15,19 +13,6 @@ const ANNOTATION_PROMPT = `You are a code tutor who helps students learn how to 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  // .env ファイルのパスを解決して読み込む
-  // 拡張機能のルートは context.extensionPath
-  // ビルド後のJSは dist/extension.js にあるので、.env も dist にあると仮定
-  // もし dist/.env を参照する場合は path.join(context.extensionPath, 'dist', '.env')
-  // ユーザーの指示は「distフォルダ内の.env」なので、そちらに合わせる
-  const distEnvPath = path.join(context.extensionPath, "dist", ".env");
-  const result = dotenv.config({ path: distEnvPath });
-
-  if (result.error) {
-    throw result.error; // エラーがあれば例外を投げる
-  } else {
-    console.log(`.env file loaded from: ${distEnvPath}`);
-  }
 
   console.log('Congratulations, your extension "coding-agent" is now active!');
 

@@ -201,3 +201,18 @@ button:hover {
 .setting-item select:focus {
   border-color: var(--vscode-inputOption-activeBorder);
 }
+
+.setting-item input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.setting-item input:focus {
+  border-color: var(--vscode-inputOption-activeBorder);
+}
