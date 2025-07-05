@@ -100,13 +100,9 @@ Important guidelines:
     }
 
     const vscodeMessages = this.convertMessagesToVSCode(processedMessages);
-    
-    // Select chat models based on the configured criteria
-    const models = await vscode.lm.selectChatModels({
-      vendor: this.vendor,
-      family: this.family,
-      ...(this.model && { model: this.model }),
-    });
+
+    // Select chat models with retry logic
+    const models = await this.selectChatModelsWithRetry();
 
     if (models.length === 0) {
       throw new Error(
@@ -199,11 +195,56 @@ Important guidelines:
           message.content as string,
         );
       } else if (message instanceof SystemMessage) {
-        return vscode.LanguageModelChatMessage.User(`System: ${message.content as string}`);
+        return vscode.LanguageModelChatMessage.User(
+          `System: ${message.content as string}`,
+        );
       } else {
         return vscode.LanguageModelChatMessage.User(message.content as string);
       }
     });
+  }
+
+  /**
+   * VSCode側で何らかの初期化処理が行われており、それを待たないとselectChatModelsは空配列を返す
+   * そこでリトライを行う。
+   */
+  private async selectChatModelsWithRetry(
+    maxRetries: number = 5,
+  ): Promise<vscode.LanguageModelChat[]> {
+    const selector = {
+      vendor: this.vendor,
+      family: this.family,
+      ...(this.model && { model: this.model }),
+    };
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      console.log(
+        `Attempting to select chat models (attempt ${attempt + 1}/${maxRetries + 1})...`,
+      );
+      const models = await vscode.lm.selectChatModels(selector);
+
+      if (models.length > 0) {
+        console.log(
+          `Successfully found ${models.length} model(s) on attempt ${attempt + 1}`,
+        );
+        return models;
+      }
+
+      if (attempt < maxRetries) {
+        console.log(
+          `No models found on attempt ${attempt + 1}, retrying after 500ms...`,
+        );
+        await this.delay(1000);
+      } else {
+        console.log(`No models found after ${maxRetries + 1} attempts`);
+      }
+    }
+
+    return [];
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private createCancellationToken(
