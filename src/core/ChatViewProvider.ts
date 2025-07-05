@@ -26,11 +26,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
-    _chatModel: LanguageModelLike,
     extensionContext: vscode.ExtensionContext,
   ) {
-    this._chatModel = _chatModel;
-    this._workflow = new Workflow(this._chatModel);
     this._extensionContext = extensionContext;
 
     // Restore chat history from global state
@@ -44,10 +41,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       "codingAgentSettings",
       { adapter: "ChatVSCodeLanguageModelAPI" }
     );
+
+    // Initialize chat model based on settings
+    this._chatModel = this._createChatModel(this._settings.adapter);
+    this._workflow = new Workflow(this._chatModel);
   }
 
   public getSettings(): SettingsData {
     return this._settings;
+  }
+
+  public getChatModel(): LanguageModelLike {
+    return this._chatModel;
   }
 
   public async updateAdapter(adapter: "ChatVSCodeLanguageModelAPI" | "ChatOpenAI") {
@@ -55,6 +60,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     this._extensionContext.globalState.update("codingAgentSettings", this._settings);
     await this._updateChatModel();
     this._updateSettings();
+  }
+
+  private _createChatModel(adapter: "ChatVSCodeLanguageModelAPI" | "ChatOpenAI"): LanguageModelLike {
+    if (adapter === "ChatVSCodeLanguageModelAPI") {
+      return new ChatVSCodeLanguageModelAPI({
+        vendor: "copilot",
+        family: "gpt-4o",
+      });
+    } else {
+      return new ChatOpenAI({
+        modelName: "gpt-4o",
+        temperature: 0,
+      });
+    }
   }
 
   public resolveWebviewView(
@@ -218,17 +237,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     console.log(`Settings updated: Using ${this._settings.adapter}`);
     
     try {
-      if (this._settings.adapter === "ChatVSCodeLanguageModelAPI") {
-        this._chatModel = new ChatVSCodeLanguageModelAPI({
-          vendor: "copilot",
-          family: "gpt-4o",
-        });
-      } else if (this._settings.adapter === "ChatOpenAI") {
-        this._chatModel = new ChatOpenAI({
-          modelName: "gpt-4o",
-          temperature: 0,
-        });
-      }
+      this._chatModel = this._createChatModel(this._settings.adapter);
       
       // Update the workflow with the new model
       this._workflow = new Workflow(this._chatModel);

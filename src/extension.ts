@@ -3,9 +3,7 @@
 import * as vscode from "vscode";
 import * as dotenv from "dotenv"; // dotenv をインポート
 import * as path from "path"; // path モジュールをインポート
-import { ChatVSCodeLanguageModelAPI } from "./core/ChatVSCodeLanguageModelAPI";
 import { HumanMessage } from "@langchain/core/messages";
-import { ChatOpenAI } from "@langchain/openai"; // ChatOpenAI をインポート
 import { ChatViewProvider } from "./core/ChatViewProvider";
 import { DIFF_VIEW_URI_SCHEME } from "./core/tools/writeFileTool"; // DIFF_VIEW_URI_SCHEME をインポート
 
@@ -20,7 +18,6 @@ export function activate(context: vscode.ExtensionContext) {
   // .env ファイルのパスを解決して読み込む
   // 拡張機能のルートは context.extensionPath
   // ビルド後のJSは dist/extension.js にあるので、.env も dist にあると仮定
-  const envPath = path.join(context.extensionPath, ".env"); // ルートの .env を参照する場合
   // もし dist/.env を参照する場合は path.join(context.extensionPath, 'dist', '.env')
   // ユーザーの指示は「distフォルダ内の.env」なので、そちらに合わせる
   const distEnvPath = path.join(context.extensionPath, "dist", ".env");
@@ -34,20 +31,10 @@ export function activate(context: vscode.ExtensionContext) {
 
   console.log('Congratulations, your extension "coding-agent" is now active!');
 
-  const chatModel = new ChatVSCodeLanguageModelAPI({
-    vendor: "copilot",
-    family: "gpt-4o",
-  });
-  // ChatOpenAI を使用した仮実装（フォールバック）
-  // const chatModel = new ChatOpenAI({
-  //   modelName: "gpt-4o",
-  //   temperature: 0,
-  // }); // 必要に応じてモデル名や設定を調整
-
   // Register CodingAgent Chat Provider
+  // モデルの初期化はChatViewProvider内で設定に基づいて行われる
   const codingAgentChatProvider = new ChatViewProvider(
     context.extensionUri,
-    chatModel,
     context, // context を渡す
   );
   context.subscriptions.push(
@@ -76,10 +63,13 @@ export function activate(context: vscode.ExtensionContext) {
           new HumanMessage(codeWithLineNumbers),
         ];
 
-        const result = await chatModel.invoke(messages);
-        await parseLangChainResponse(result.content as string, textEditor);
+        // ChatViewProviderから現在のモデルを取得
+        const currentModel = codingAgentChatProvider.getChatModel();
+        const result = await currentModel.invoke(messages);
+        const content = typeof result === 'string' ? result : (result as any).content || '';
+        await parseLangChainResponse(content, textEditor);
       } catch (error) {
-        console.error("Error using ChatVSCodeLanguageModelAPI:", error);
+        console.error("Error using chat model:", error);
         vscode.window.showErrorMessage(
           `Failed to get code annotations: ${error}`,
         );
