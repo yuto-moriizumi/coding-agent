@@ -1,4 +1,5 @@
 const esbuild = require("esbuild");
+const fs = require("fs");
 
 const production = process.argv.includes("--production");
 const watch = process.argv.includes("--watch");
@@ -62,6 +63,12 @@ async function main() {
     },
     plugins: [esbuildProblemMatcherPlugin],
   });
+
+  // Copy CSS file to dist directory
+  if (!fs.existsSync("dist")) {
+    fs.mkdirSync("dist", { recursive: true });
+  }
+  fs.copyFileSync("src/webview/styles.css", "dist/styles.css");
 
   if (watch) {
     await extensionContext.watch();
