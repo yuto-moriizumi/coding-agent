@@ -2,7 +2,7 @@ import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 import * as vscode from "vscode";
 import * as path from "path";
-import { getWorkspaceRoot } from "../workspace";
+import { getWorkspaceRoot } from "../getWorkspaceRoot";
 
 export const createFileTool = new DynamicStructuredTool({
   name: "create_file",

@@ -5,9 +5,9 @@ import {
   HumanMessage,
   SystemMessage,
 } from "@langchain/core/messages";
-import { createVSCodeTools } from "./VSCodeTools";
+import { createVSCodeTools } from "./tools";
 import { LanguageModelLike } from "@langchain/core/language_models/base";
-import { getSystemPrompt } from "./constants";
+import { getSystemPrompt } from "./getSystemPrompt";
 
 export interface CodingAgentState {
   messages: BaseMessage[];

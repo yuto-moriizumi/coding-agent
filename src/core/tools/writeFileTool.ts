@@ -3,7 +3,7 @@ import { z } from "zod";
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs/promises";
-import { getWorkspaceRoot } from "../workspace";
+import { getWorkspaceRoot } from "../getWorkspaceRoot";
 
 export const DIFF_VIEW_URI_SCHEME = "agent-diff";
 
