@@ -4,17 +4,19 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { getWorkspaceRoot } from "../getWorkspaceRoot";
 
+const searchFilesSchema = z.object({
+  searchTerm: z.string().describe("The text to search for"),
+  extensions: z
+    .array(z.string())
+    .optional()
+    .describe("File extensions to search in (e.g., ['.ts', '.js'])"),
+});
+
 export const searchFilesTool = new DynamicStructuredTool({
   name: "search_files",
   description: "Search for text content in files within the workspace",
-  schema: z.object({
-    searchTerm: z.string().describe("The text to search for"),
-    extensions: z
-      .array(z.string())
-      .optional()
-      .describe("File extensions to search in (e.g., ['.ts', '.js'])"),
-  }),
-  func: async ({ searchTerm, extensions = [".ts", ".js", ".json", ".md"] }) => {
+  schema: searchFilesSchema,
+  func: async ({ searchTerm, extensions = [".ts", ".js", ".json", ".md"] }: z.infer<typeof searchFilesSchema>) => {
     try {
       const results: Array<{
         file: string;

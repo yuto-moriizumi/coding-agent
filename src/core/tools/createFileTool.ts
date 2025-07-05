@@ -4,14 +4,16 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { getWorkspaceRoot } from "../getWorkspaceRoot";
 
+const createFileSchema = z.object({
+  filePath: z.string().describe("The path where to create the file"),
+  content: z.string().describe("The initial content for the file"),
+});
+
 export const createFileTool = new DynamicStructuredTool({
   name: "create_file",
   description: "Create a new file with content in the workspace",
-  schema: z.object({
-    filePath: z.string().describe("The path where to create the file"),
-    content: z.string().describe("The initial content for the file"),
-  }),
-  func: async ({ filePath, content }) => {
+  schema: createFileSchema,
+  func: async ({ filePath, content }: z.infer<typeof createFileSchema>) => {
     try {
       const uri = vscode.Uri.file(
         path.isAbsolute(filePath)

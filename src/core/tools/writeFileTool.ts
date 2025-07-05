@@ -117,14 +117,16 @@ async function closeAgentDiffViews() {
   }
 }
 
+const writeFileSchema = z.object({
+  filePath: z.string().describe("The path to the file to write"),
+  content: z.string().describe("The content to write to the file"),
+});
+
 export const writeFileTool = new DynamicStructuredTool({
   name: "write_file",
   description: "Write content to a file in the workspace",
-  schema: z.object({
-    filePath: z.string().describe("The path to the file to write"),
-    content: z.string().describe("The content to write to the file"),
-  }),
-  func: async ({ filePath, content }) => {
+  schema: writeFileSchema,
+  func: async ({ filePath, content }: z.infer<typeof writeFileSchema>) => {
     try {
       const uri = vscode.Uri.file(
         path.isAbsolute(filePath)
