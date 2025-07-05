@@ -5,7 +5,7 @@ import * as dotenv from "dotenv"; // dotenv をインポート
 import * as path from "path"; // path モジュールをインポート
 import { ChatVSCodeLanguageModelAPI } from "./core/ChatVSCodeLanguageModelAPI";
 import { HumanMessage } from "@langchain/core/messages";
-// import { ChatOpenAI } from "@langchain/openai"; // ChatOpenAI をインポート（現在は未使用）
+import { ChatOpenAI } from "@langchain/openai"; // ChatOpenAI をインポート
 import { ChatViewProvider } from "./core/ChatViewProvider";
 import { DIFF_VIEW_URI_SCHEME } from "./core/tools/writeFileTool"; // DIFF_VIEW_URI_SCHEME をインポート
 

@@ -16,9 +16,17 @@ declare global {
   }
 }
 
+interface SettingsData {
+  adapter: "ChatVSCodeLanguageModelAPI" | "ChatOpenAI";
+}
+
 export function ChatApp() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState<SettingsData>({
+    adapter: "ChatVSCodeLanguageModelAPI"
+  });
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [vscodeApi] = useState(() => window.acquireVsCodeApi());
   console.log("render ChatApp");
@@ -28,14 +36,19 @@ export function ChatApp() {
       const message = event.data;
       if (message.type === "updateChat") {
         setMessages(message.messages);
+      } else if (message.type === "updateSettings") {
+        setSettings(message.settings);
       }
     };
 
     window.addEventListener("message", handleMessage);
     
-    // Request initial chat history after component mounts
+    // Request initial chat history and settings after component mounts
     vscodeApi.postMessage({
       type: "requestHistory"
+    });
+    vscodeApi.postMessage({
+      type: "requestSettings"
     });
     
     return () => window.removeEventListener("message", handleMessage);
@@ -65,20 +78,64 @@ export function ChatApp() {
     });
   };
 
+  const toggleSettings = () => {
+    setShowSettings(!showSettings);
+  };
+
+  const handleSettingsChange = (newSettings: SettingsData) => {
+    setSettings(newSettings);
+    vscodeApi.postMessage({
+      type: "updateSettings",
+      settings: newSettings
+    });
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       sendMessage();
     }
   };
 
+  const SettingsPanel = () => (
+    <div className="settings-panel">
+      <div className="settings-header">
+        <h4>Settings</h4>
+        <button onClick={toggleSettings}>✕</button>
+      </div>
+      <div className="settings-content">
+        <div className="setting-item">
+          <label htmlFor="adapter-select">Language Model Adapter:</label>
+          <select
+            id="adapter-select"
+            value={settings.adapter}
+            onChange={(e) => handleSettingsChange({
+              ...settings,
+              adapter: e.target.value as "ChatVSCodeLanguageModelAPI" | "ChatOpenAI"
+            })}
+          >
+            <option value="ChatVSCodeLanguageModelAPI">VSCode Language Model API</option>
+            <option value="ChatOpenAI">OpenAI API</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="chat-app">
       <div className="header">
         <h3>CodingAgent Chat</h3>
-        <button id="clearButton" onClick={clearChat}>
-          Clear
-        </button>
+        <div className="header-buttons">
+          <button id="clearButton" onClick={clearChat}>
+            Clear
+          </button>
+          <button id="settingsButton" onClick={toggleSettings} title="Settings">
+            ⚙️
+          </button>
+        </div>
       </div>
+
+      {showSettings && <SettingsPanel />}
 
       <div className="chat-container" ref={chatContainerRef}>
         {messages.length === 0 ? (

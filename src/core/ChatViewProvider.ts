@@ -1,12 +1,18 @@
 import * as vscode from "vscode";
 import { Workflow } from "./Workflow";
 import { LanguageModelLike } from "@langchain/core/language_models/base";
+import { ChatVSCodeLanguageModelAPI } from "./ChatVSCodeLanguageModelAPI";
+import { ChatOpenAI } from "@langchain/openai";
 
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: number;
+}
+
+export interface SettingsData {
+  adapter: "ChatVSCodeLanguageModelAPI" | "ChatOpenAI";
 }
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
@@ -16,6 +22,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   private _chatModel: LanguageModelLike;
   private _workflow: Workflow;
   private _extensionContext: vscode.ExtensionContext;
+  private _settings: SettingsData;
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
@@ -31,6 +38,23 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
       "taskHistory",
       [],
     );
+
+    // Restore settings from global state
+    this._settings = this._extensionContext.globalState.get(
+      "codingAgentSettings",
+      { adapter: "ChatVSCodeLanguageModelAPI" }
+    );
+  }
+
+  public getSettings(): SettingsData {
+    return this._settings;
+  }
+
+  public async updateAdapter(adapter: "ChatVSCodeLanguageModelAPI" | "ChatOpenAI") {
+    this._settings.adapter = adapter;
+    this._extensionContext.globalState.update("codingAgentSettings", this._settings);
+    await this._updateChatModel();
+    this._updateSettings();
   }
 
   public resolveWebviewView(
@@ -58,6 +82,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         case "requestHistory":
           // Send history when webview is ready
           this._updateWebview();
+          break;
+        case "requestSettings":
+          // Send current settings to webview
+          this._updateSettings();
+          break;
+        case "updateSettings":
+          // Update settings and save to global state
+          this._settings = data.settings;
+          this._extensionContext.globalState.update("codingAgentSettings", this._settings);
+          // Update the chat model based on the new settings
+          await this._updateChatModel();
           break;
       }
     });
@@ -165,6 +200,47 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     // Save chat history to global state
     this._extensionContext.globalState.update("taskHistory", this._chatHistory);
+  }
+
+  private _updateSettings() {
+    if (!this._view) {
+      return;
+    }
+
+    this._view.webview.postMessage({
+      type: "updateSettings",
+      settings: this._settings,
+    });
+  }
+
+  private async _updateChatModel() {
+    // Create a new chat model instance based on the settings
+    console.log(`Settings updated: Using ${this._settings.adapter}`);
+    
+    try {
+      if (this._settings.adapter === "ChatVSCodeLanguageModelAPI") {
+        this._chatModel = new ChatVSCodeLanguageModelAPI({
+          vendor: "copilot",
+          family: "gpt-4o",
+        });
+      } else if (this._settings.adapter === "ChatOpenAI") {
+        this._chatModel = new ChatOpenAI({
+          modelName: "gpt-4o",
+          temperature: 0,
+        });
+      }
+      
+      // Update the workflow with the new model
+      this._workflow = new Workflow(this._chatModel);
+      
+      console.log(`Successfully switched to ${this._settings.adapter}`);
+      
+      // Optionally notify user
+      vscode.window.showInformationMessage(`Switched to ${this._settings.adapter === "ChatVSCodeLanguageModelAPI" ? "VSCode Language Model API" : "OpenAI API"}`);
+    } catch (error) {
+      console.error("Failed to update chat model:", error);
+      vscode.window.showErrorMessage(`Failed to switch to ${this._settings.adapter}: ${error}`);
+    }
   }
 
   private _getHtmlForWebview(webview: vscode.Webview) {
