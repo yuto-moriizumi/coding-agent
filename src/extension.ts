@@ -5,7 +5,7 @@ import * as dotenv from "dotenv"; // dotenv をインポート
 import * as path from "path"; // path モジュールをインポート
 import { ChatVSCodeLanguageModelAPI } from "./core/ChatVSCodeLanguageModelAPI";
 import { HumanMessage } from "@langchain/core/messages";
-import { ChatOpenAI } from "@langchain/openai"; // ChatOpenAI をインポート
+// import { ChatOpenAI } from "@langchain/openai"; // ChatOpenAI をインポート（現在は未使用）
 import { ChatViewProvider } from "./core/ChatViewProvider";
 import { DIFF_VIEW_URI_SCHEME } from "./core/tools/writeFileTool"; // DIFF_VIEW_URI_SCHEME をインポート
 
@@ -34,15 +34,15 @@ export function activate(context: vscode.ExtensionContext) {
 
   console.log('Congratulations, your extension "coding-agent" is now active!');
 
-  // const chatModel = new ChatVSCodeLanguageModelAPI({
-  //   vendor: "copilot",
-  //   family: "gpt-4.1",
-  // });
-  // ChatOpenAI を使用した仮実装
-  const chatModel = new ChatOpenAI({
-    modelName: "gpt-4.1",
-    temperature: 0,
-  }); // 必要に応じてモデル名や設定を調整
+  const chatModel = new ChatVSCodeLanguageModelAPI({
+    vendor: "copilot",
+    family: "gpt-4o",
+  });
+  // ChatOpenAI を使用した仮実装（フォールバック）
+  // const chatModel = new ChatOpenAI({
+  //   modelName: "gpt-4o",
+  //   temperature: 0,
+  // }); // 必要に応じてモデル名や設定を調整
 
   // Register CodingAgent Chat Provider
   const codingAgentChatProvider = new ChatViewProvider(

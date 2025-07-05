@@ -38,13 +38,13 @@ export class ChatVSCodeLanguageModelAPI extends BaseChatModel {
   constructor(params: ChatVSCodeLanguageModelAPIParams = {}) {
     super(params);
     this.vendor = params.vendor || "copilot";
-    this.family = params.family || "gpt-4.1";
+    this.family = params.family || "gpt-4o"; // Updated to use recommended gpt-4o
     this.model = params.model;
     this.tools = params.tools; // tools を初期化
     console.log(
-      `ChatVSCodeLanguageModelAPI initialized with ${
+      `ChatVSCodeLanguageModelAPI initialized with vendor: ${this.vendor}, family: ${this.family}, tools: ${
         params.tools?.length ?? 0
-      } tools`,
+      }`,
     );
   }
 
@@ -69,88 +69,57 @@ export class ChatVSCodeLanguageModelAPI extends BaseChatModel {
           const toolParameters = tool.function?.parameters
             ? JSON.stringify(tool.function.parameters)
             : "{}";
-          return `- toolName: ${toolName}\n  description: ${toolDescription}\n  parameters: ${toolParameters}`;
+          return `- Tool Name: ${toolName}\n  Description: ${toolDescription}\n  Parameters: ${toolParameters}`;
         })
-        .join("\n");
+        .join("\n\n");
 
       const toolPrompt = `
 You have access to the following tools:
 ${toolDescriptions}
 
-If you need to use a tool, respond ONLY with a JSON object in the following format (do not include any other text before or after the JSON):
+When you need to use a tool, respond ONLY with a JSON object in this exact format:
 {
   "type": "tool_call",
   "call": {
     "name": "TOOL_NAME",
-    "arguments": { "ARG_NAME": "ARG_VALUE", ... }
+    "arguments": { "param_name": "param_value" }
   }
 }
-Ensure the arguments object is a valid JSON object.
-If you do not need to use a tool, respond to the user directly as plain text.`;
 
-      let lastHumanMessageIndex = -1;
-      for (let i = processedMessages.length - 1; i >= 0; i--) {
-        if (
-          processedMessages[i].lc_serializable &&
-          processedMessages[i] instanceof HumanMessage // Check if it's a HumanMessage instance
-        ) {
-          lastHumanMessageIndex = i;
-          break;
-        }
-      }
+Important guidelines:
+- Use tools when the user's request requires specific actions (file operations, code execution, etc.)
+- The JSON must be valid and complete
+- Do not include any explanatory text before or after the JSON
+- If you don't need to use a tool, respond with regular text`;
 
-      if (lastHumanMessageIndex !== -1) {
-        const originalContent =
-          processedMessages[lastHumanMessageIndex].content;
-        processedMessages[lastHumanMessageIndex] = new HumanMessage({
-          content: `${originalContent}\n\n${toolPrompt}`,
-        });
-      } else {
-        // Fallback: if no human message, add to the first message if it's human,
-        // or create a new human message at the beginning.
-        // This part might need adjustment based on expected agent behavior.
-        const humanMessageWithPrompt = new HumanMessage({
-          content: toolPrompt,
-        });
-        if (
-          processedMessages.length > 0 &&
-          processedMessages[0].lc_serializable &&
-          processedMessages[0] instanceof HumanMessage
-        ) {
-          const existingContent = processedMessages[0].content;
-          processedMessages[0] = new HumanMessage({
-            content: `${existingContent}\n\n${toolPrompt}`,
-          });
-        } else {
-          processedMessages.unshift(humanMessageWithPrompt);
-        }
-        console.warn(
-          "Tool prompt was not appended to an existing HumanMessage. It was added to the beginning or a new message.",
-        );
-      }
+      // Add system message with tool instructions at the beginning
+      const systemMessage = new SystemMessage({
+        content: toolPrompt,
+      });
+      processedMessages.unshift(systemMessage);
     }
 
     const vscodeMessages = this.convertMessagesToVSCode(processedMessages);
-    // console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"); // Original log line
-    // おそらくCopilotの初期化を待たないと空の結果が返る
-    const models = await vscode.lm.selectChatModels();
-    console.log({ models });
-    await vscode.window.showInformationMessage(
-      `Available models: ${JSON.stringify(models)}`,
-    );
-    console.log(141);
-    const [model] = await vscode.lm.selectChatModels({
+    
+    // Select chat models based on the configured criteria
+    const models = await vscode.lm.selectChatModels({
       vendor: this.vendor,
       family: this.family,
       ...(this.model && { model: this.model }),
     });
 
-    if (!model) {
+    if (models.length === 0) {
       throw new Error(
-        `No VS Code Language Model found for vendor: ${this.vendor}, family: ${this.family}`,
+        `No VS Code Language Model found for vendor: ${this.vendor}, family: ${this.family}${
+          this.model ? `, model: ${this.model}` : ""
+        }. Please ensure the required language model is available and you have proper permissions.`,
       );
     }
-    console.log(152);
+
+    // Use the first available model
+    const [model] = models;
+    console.log(`Using model: ${model.vendor}/${model.family} (${model.id})`);
+    console.log(`Model token limit: ${model.maxInputTokens}`);
 
     const cancellationToken = options?.signal
       ? this.createCancellationToken(options.signal)
@@ -230,7 +199,7 @@ If you do not need to use a tool, respond to the user directly as plain text.`;
           message.content as string,
         );
       } else if (message instanceof SystemMessage) {
-        return vscode.LanguageModelChatMessage.User(message.content as string);
+        return vscode.LanguageModelChatMessage.User(`System: ${message.content as string}`);
       } else {
         return vscode.LanguageModelChatMessage.User(message.content as string);
       }
@@ -258,12 +227,6 @@ If you do not need to use a tool, respond to the user directly as plain text.`;
   ): Runnable<BaseLanguageModelInput, AIMessageChunk> {
     const toolDefinitions = tools.map(convertToOpenAITool); // convertToToolDefinition を convertToOpenAITool に変更
 
-    // 仮実装としてツールを登録しない
-    return new ChatVSCodeLanguageModelAPI({
-      ...this.invocationParams(), // _lc_params の代わりに invocationParams() を使用
-      tools: [],
-      ...kwargs,
-    });
     const constructor = this.constructor as new (
       params: ChatVSCodeLanguageModelAPIParams & { [key: string]: any },
     ) => this;
