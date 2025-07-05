@@ -1,0 +1,20 @@
+﻿# The auto-merge will be blocked if the validate workflow fails, with using branch protection rules.
+# If the rule is not configured, this workflow will merge every pull request opened by dependabot even if tests fails.
+# Don't forget to configure it!
+name: AutoMerge
+on: pull_request_target
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: ${{github.actor == 'dependabot[bot]'}}
+    steps:
+      - name: Enable auto-merge for Dependabot PRs
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
