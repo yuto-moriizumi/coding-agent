@@ -12,6 +12,7 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "publisher": "volgakurvar",
+  "repository": "https://github.com/yuto-moriizumi/coding-agent",
   "contributes": {
     "commands": [
       {

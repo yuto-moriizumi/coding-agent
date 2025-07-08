@@ -3,10 +3,20 @@
 AIコーディングエージェントのVSCode拡張です。
 学習目的で作成しました。Clineの劣化版です（笑）
 
+## 動作イメージ
+
+クリックしてgif画像を再生できます。
+![動作イメージ](./docs/basic.gif)
+
 ## 対応API
 
 - OpenAI - gpt-4.1, gpt-4.1-miniなどが動作します。設定画面からAPIキーの設定が必要です。
 - VSCode Language Model API - Copilotのライセンス経由で、gpt-4.1が動作します。
+
+### 動作イメージ
+
+クリックしてgif画像を再生できます。
+![API選択画面](./docs/select-api.gif)
 
 ## インストール方法
 
